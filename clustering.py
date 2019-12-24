@@ -146,7 +146,6 @@ def log_distance_pairing(member_numbers):
         if i in used:
             continue
 
-        cluster = []
         for j in range(member_numbers):
 
             if i == j:
@@ -160,10 +159,6 @@ def log_distance_pairing(member_numbers):
                 min = sum
                 min_idx = j
 
-        cluster.append(i)
-        cluster.append(min_idx)
-
-        clusters.append(cluster)
         used.append(min_idx)
         if targets[member_ids[i]] != targets[member_ids[min_idx]]:
             miss += 1
@@ -172,52 +167,57 @@ def log_distance_pairing(member_numbers):
         miss / member_numbers))
 
 
-def log_distance_clustering(clusters, distances):
-
-    new_clusters = []
-    used = []
+def closest_cluster_dictionary(clusters, cluster_distances):
+    closest_cluster = {}
     for idx, c in enumerate(clusters):
-        if idx in used:
-            continue
-
-        min = 10000000
-        closest_cluster = -1
-
+        min_distance = 100000000
         for idx2, c2 in enumerate(clusters):
-            cluster_sum = 0
-
             if idx == idx2:
                 continue
 
-            for m in c:
-                member_sum = 0
+            key = str(idx) + '_' + str(idx2)
+            distance = cluster_distances[key]
 
-                for m2 in c2:
-                    if m[0] == m2[0]:
-                        print(idx)
-                        print(idx2)
-                        print(len(c))
-                        print(len(c2))
-                        input()
-                    key = str(m[0])+'_'+str(m2[0])
-                    member_sum += distances[key]
+            if distance < min_distance:
+                min_distance = distance
+                closest_cluster[idx] = idx2
 
-                normalized = member_sum / len(c2)
-                cluster_sum += normalized
+    return closest_cluster
 
-            if cluster_sum < min:
-                min = cluster_sum
-                closest_cluster = idx2
 
-        if closest_cluster not in used:
-            used.append(closest_cluster)
+def log_distance_clustering(clusters, distances):
 
-        for m in c:
-            clusters[closest_cluster].append(m)
+    new_clusters = []
+    merged = []
 
-    for c in used:
-        copied_cluster = copy.deepcopy(clusters[c])
-        new_clusters.append(copied_cluster)
+    cluster_distances = calc_cluster_distances(clusters, distances)
+    closest_clusters = closest_cluster_dictionary(clusters, cluster_distances)
+
+    for idx, c in enumerate(clusters):
+        if idx in merged:
+            continue
+        for idx2, c2 in enumerate(clusters):
+            if idx in merged:
+                continue
+            if idx == idx2:
+                continue
+
+            if closest_clusters[idx] == idx2 and closest_clusters[idx2] == idx:
+                if idx > idx2:
+                    for m in c:
+                        c2.append(m)
+                    merged.append(idx)
+                else:
+                    for m2 in c2:
+                        c.append(m2)
+                    merged.append(idx2)
+
+                break
+
+    for idx, c in enumerate(clusters):
+        if idx not in merged:
+            copied_cluster = copy.deepcopy(clusters[idx])
+            new_clusters.append(copied_cluster)
 
     return new_clusters
 
@@ -241,6 +241,45 @@ def calculate_distances(sigmoided_data):
     return distances
 
 
+def calc_cluster_distances(clusters, distances):
+    cluster_distances = {}
+    for idx, c in enumerate(clusters):
+        for idx2, c2 in enumerate(clusters):
+            if idx >= idx2:
+                continue
+
+            distance = cluster_to_cluster_distance(c, c2, idx, idx2, distances)
+
+            key1 = str(idx) + '_' + str(idx2)
+            cluster_distances[key1] = distance
+
+            key2 = str(idx2) + '_' + str(idx)
+            cluster_distances[key2] = distance
+
+    return cluster_distances
+
+
+def cluster_to_cluster_distance(a, b, idx_a, idx_b, distances):
+    cluster_sum = 0
+    for m in a:
+        member_sum = 0
+
+        for m2 in b:
+            if m[0] == m2[0]:
+                print(idx_a)
+                print(idx_b)
+                print(len(a))
+                print(len(b))
+                input()
+            key = str(m[0]) + '_' + str(m2[0])
+            member_sum += distances[key]
+
+        normalized = member_sum / len(b)
+        cluster_sum += normalized
+
+    return cluster_sum
+
+
 def call_log_dist_clustering(member_numbers, cluster_number):
     member_ids = np.random.choice(len(X_test), size=member_numbers, replace=False)
     X = X_test[member_ids]
@@ -256,7 +295,9 @@ def call_log_dist_clustering(member_numbers, cluster_number):
         list.append(image_and_index)
         sigmoided.append(list)
 
+    print("done with sigmoid")
     distances = calculate_distances(idx_data)
+    print("done with distances")
 
     counter = 0
     while len(sigmoided) > cluster_number:
@@ -268,8 +309,15 @@ def call_log_dist_clustering(member_numbers, cluster_number):
         labels = []
         for m in c:
             labels.append(targets[m[0]])
+
+        print("most frequent: " + str(most_frequent(labels)))
+        print("missclassifications: " + str(miss_classifications(labels)))
+
         print(labels)
 
-call_log_dist_clustering(200,15)
+
+
+
+call_log_dist_clustering(200, 30)
 #log_distance_pairing(500)
 #get_centroids(10000)

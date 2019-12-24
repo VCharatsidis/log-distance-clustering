@@ -51,7 +51,7 @@ def multi_filter_flatten(out):
 def forward_block(X, ids, conv, colons, optimizers, train):
     x_train = X[ids, :]
 
-    x_tensor = to_Tensor(x_train, 1)
+    x_tensor = to_Tensor(x_train)
     convolutions = conv.forward(x_tensor)
     flattened_convolutions = flatten(convolutions)
     size = flattened_convolutions.shape[1]
