@@ -196,22 +196,16 @@ def log_distance_clustering(clusters, distances):
     for idx, c in enumerate(clusters):
         if idx in merged:
             continue
+
         for idx2, c2 in enumerate(clusters):
-            if idx in merged:
-                continue
-            if idx == idx2:
+            if idx >= idx2 or (idx2 in merged):
                 continue
 
             if closest_clusters[idx] == idx2 and closest_clusters[idx2] == idx:
-                if idx > idx2:
-                    for m in c:
-                        c2.append(m)
-                    merged.append(idx)
-                else:
-                    for m2 in c2:
-                        c.append(m2)
-                    merged.append(idx2)
+                for m2 in c2:
+                    c.append(m2)
 
+                merged.append(idx2)
                 break
 
     for idx, c in enumerate(clusters):
@@ -301,23 +295,29 @@ def call_log_dist_clustering(member_numbers, cluster_number):
 
     counter = 0
     while len(sigmoided) > cluster_number:
-        print("clustering iteration: "+str(counter))
+        print("clustering iteration: "+str(counter) + " number clusters: "+str(len(sigmoided)))
         counter += 1
         sigmoided = log_distance_clustering(sigmoided, distances)
 
+    total_miss = 0
     for c in sigmoided:
         labels = []
         for m in c:
             labels.append(targets[m[0]])
 
+        miss = miss_classifications(labels)
+        total_miss += miss
         print("most frequent: " + str(most_frequent(labels)))
-        print("missclassifications: " + str(miss_classifications(labels)))
+        print("missclassifications: " + str(miss/len(labels)))
 
         print(labels)
 
+    print("total missclassifications: " + str(total_miss/member_numbers))
+    print("number classes: "+str(len(sigmoided)))
 
 
 
-call_log_dist_clustering(200, 30)
+
+call_log_dist_clustering(2000, 15)
 #log_distance_pairing(500)
 #get_centroids(10000)

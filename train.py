@@ -22,11 +22,11 @@ from colon import Colon
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
-LEARNING_RATE_DEFAULT = 2e-3
+LEARNING_RATE_DEFAULT = 1e-3
 MAX_STEPS_DEFAULT = 30000
 BATCH_SIZE_DEFAULT = 256
 HALF_BATCH = BATCH_SIZE_DEFAULT // 2
-EVAL_FREQ_DEFAULT = 100
+EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
 
@@ -133,9 +133,9 @@ def train():
         loss_list = forward_block(X_train, ids, conv, colons, optimizers, train)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
-            numpy_loss = np.array(loss_list)
-            show_mnist(numpy_loss)
-            print_params(conv)
+            # numpy_loss = np.array(loss_list)
+            # show_mnist(numpy_loss)
+            # print_params(conv)
             print(loss_list)
             print(statistics.mean(loss_list))
             print(iteration)
