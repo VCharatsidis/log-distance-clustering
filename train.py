@@ -24,9 +24,9 @@ from colon import Colon
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
-LEARNING_RATE_DEFAULT = 1e-3
+LEARNING_RATE_DEFAULT = 2e-3
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 256
+BATCH_SIZE_DEFAULT = 1
 HALF_BATCH = BATCH_SIZE_DEFAULT // 2
 EVAL_FREQ_DEFAULT = 200
 
@@ -158,6 +158,10 @@ def train():
         loss_list, base_conv_loss = forward_block(X_train, ids, conv, base_conv, colons, optimizers, train, BATCH_SIZE_DEFAULT)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
+            print(X_train[ids])
+            show_mnist(X_train[ids])
+            numpy_loss = np.array(loss_list)
+            show_mnist(numpy_loss)
             print("iteration: ", iteration)
             print("convolution loss: " + str(base_conv_loss))
             # numpy_loss = np.array(loss_list)
@@ -166,13 +170,12 @@ def train():
             print(loss_list)
             print("mean: " + str(statistics.mean(loss_list)))
 
-
             total_loss = 0
 
             test_size = 9984
-            for i in range(BATCH_SIZE_DEFAULT, test_size, BATCH_SIZE_DEFAULT):
-                ids = np.array(range(i - BATCH_SIZE_DEFAULT, i))
-                loss_list, _ = forward_block(X_test, ids, conv, base_conv, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            for i in range(test_size, test_size, test_size):
+                ids = np.array(range(i - test_size, i))
+                loss_list, _ = forward_block(X_test, ids, conv, base_conv, colons, optimizers, False, test_size)
 
                 total_loss += statistics.mean(loss_list)
 

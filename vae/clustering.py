@@ -1,26 +1,30 @@
-
 import torch
 import numpy as np
 from torch.autograd import Variable
 from sklearn.datasets import fetch_openml
-from train import forward_block
 import os
-from conv import DetachedConvNet
 import copy
 from sklearn.cluster import KMeans
-from train import to_Tensor
-from copy import deepcopy
+from base_conv import BaseConv
+from sklearn.metrics import mutual_info_score
+
+
+import torch
 
 
 script_directory = os.path.split(os.path.abspath(__file__))[0]
-detached_net_model = os.path.join(script_directory, 'detached_net.model')
-conv = torch.load(detached_net_model)
 
-colons = []
-for i in range(784):
-    path = 'colons\\colon_' + str(i) + '.model'
-    colon = os.path.join(script_directory, path)
-    colons.append(torch.load(colon))
+encoder_model = os.path.join(script_directory, 'encoder.model')
+encoder = torch.load(encoder_model)
+
+decoder_model = os.path.join(script_directory, 'decoder.model')
+decoder = torch.load(decoder_model)
+
+sec_encoder_model = os.path.join(script_directory, 'sec_encoder.model')
+sec_encoder = torch.load(sec_encoder_model)
+
+sec_decoder_model = os.path.join(script_directory, 'sec_decoder.model')
+sec_decoder = torch.load(sec_decoder_model)
 
 mnist = fetch_openml('mnist_784', version=1, cache=True)
 targets = mnist.target[60000:]
@@ -30,11 +34,6 @@ X_test = mnist.data[60000:]
 
 fake_optimizers = []
 
-
-def loss_representations(member_ids):
-    with torch.no_grad():
-        res = forward_block(X_test, member_ids, conv, colons, fake_optimizers, False)
-        return res
 
 
 def miss_classifications(cluster):
@@ -47,11 +46,67 @@ def miss_classifications(cluster):
     return missclassifications
 
 
+def calc_distance(out, y):
+    abs_difference = torch.abs(out - y)
+    abs_difference = torch.min(torch.ones(abs_difference.shape), abs_difference)
+    abs_difference = torch.max(torch.zeros(abs_difference.shape), abs_difference)
+
+    eps = 1e-8
+    information_loss = torch.log(1 - abs_difference + eps)
+
+    return information_loss
+
+
 def get_centroids(member_numbers):
     member_ids = np.random.choice(len(X_test), size=member_numbers, replace=False)
-    X = []
-    for i in member_ids:
-        X.append(loss_representations(i))
+    X = X_test[member_ids]
+    X_kmeans = []
+    # for i in member_ids:
+    #     X.append(loss_representations([i]))
+
+    X = Variable(torch.FloatTensor(X))
+    for counter, i in enumerate(X):
+        list = []
+
+        i = i / 255
+
+        mean, std = encoder(i)
+
+        #e = torch.zeros(mean.shape).normal_()
+        z = std + mean
+
+        output = decoder(z)
+        eps = 1e-8
+        L_reconstruction = calc_distance(output, i)
+
+        sec_mean, sec_std = sec_encoder(input)
+        e = torch.zeros(mean.shape).normal_()
+        sec_z = sec_std * e + sec_mean
+
+        sec_output = sec_decoder(sec_z)
+        sec_L_reconstruction = calc_distance(sec_output, L_reconstruction)
+
+        show_mnist(i)
+        show_mnist(output.detach().numpy())
+
+        abs_difference = torch.abs(output - i)
+
+        eps = 1e-8
+        information_loss = torch.log(1 - abs_difference + eps)
+        information_loss = torch.abs(information_loss)
+        print(information_loss)
+        information_loss = information_loss.detach().numpy()
+        show_mnist(information_loss)
+
+        indexes_of_biggest_elements = information_loss.argsort()[-5:][::-1]
+
+        for i in range(784):
+            if i not in indexes_of_biggest_elements:
+                information_loss[i] = 0
+
+        show_mnist(information_loss)
+
+        X_kmeans.append(output.detach().numpy())
 
     # X1 = copy.deepcopy(X)
     # X1 = np.array(X1)
@@ -68,7 +123,7 @@ def get_centroids(member_numbers):
     # X = np.array(X)
     # print(X.shape)
 
-    predict = KMeans(n_clusters=10).fit_predict(X)
+    predict = KMeans(n_clusters=10).fit_predict(X_kmeans)
 
     clusters_to_ids = {}
 
@@ -113,7 +168,9 @@ def most_frequent(List):
 
 
 def log_distance_pairing(member_numbers):
-    conv = DetachedConvNet(1, 1, 1)
+    conv = SigmoidLayer()
+    base_conv = BaseConv(1)
+
     member_ids = np.random.choice(len(X_test), size=member_numbers, replace=False)
     X = X_test[member_ids]
 
@@ -127,10 +184,9 @@ def log_distance_pairing(member_numbers):
 
     # X = []
     # for i in member_ids:
-    #     X.append(loss_representations(i))
+    #     X. (loss_representations(i))
     #
     # X = np.array(X)
-
 
     miss = 0
     used = []
@@ -170,7 +226,8 @@ def log_distance_pairing(member_numbers):
 def closest_cluster_dictionary(clusters, cluster_distances):
     closest_cluster = {}
     for idx, c in enumerate(clusters):
-        min_distance = 100000000
+        closest_cluster[idx] = -1
+        min_distance = -100000000
         for idx2, c2 in enumerate(clusters):
             if idx == idx2:
                 continue
@@ -178,7 +235,7 @@ def closest_cluster_dictionary(clusters, cluster_distances):
             key = str(idx) + '_' + str(idx2)
             distance = cluster_distances[key]
 
-            if distance < min_distance:
+            if distance > min_distance:
                 min_distance = distance
                 closest_cluster[idx] = idx2
 
@@ -201,6 +258,11 @@ def log_distance_clustering(clusters, distances):
             if idx >= idx2 or (idx2 in merged):
                 continue
 
+            if idx not in closest_clusters or idx2 not in closest_clusters:
+                print(idx)
+                print(idx2)
+                input()
+
             if closest_clusters[idx] == idx2 and closest_clusters[idx2] == idx:
                 for m2 in c2:
                     c.append(m2)
@@ -216,14 +278,51 @@ def log_distance_clustering(clusters, distances):
     return new_clusters
 
 
+def calc_MI(x, y, bins):
+    c_xy = np.histogram2d(x, y, bins)[0]
+    mi = mutual_info_score(None, None, contingency=c_xy)
+    return mi
+
+
+def calculate_distances_KL(data):
+    distances = {}
+
+    for idx, i in enumerate(data):
+        for idx2, j in enumerate(data):
+            if idx >= idx2:
+                continue
+
+            #sum = double_KL(i[1], j[1])
+            sum = calc_MI(i[1], j[1], 150)
+            print(sum)
+
+            key1 = str(i[0]) + '_' + str(j[0])
+            distances[key1] = sum
+
+            key2 = str(j[0]) + '_' + str(i[0])
+            distances[key2] = sum
+
+    return distances
+
+
+def double_KL(p, q):
+    return KL_distance(p, q) + KL_distance(q, p)
+
+
+def KL_distance(p, q):
+    eps = 1e-8
+    return np.sum(np.where(p != 0, p * np.log(p / q ), 0))
+
+
 def calculate_distances(sigmoided_data):
     distances = {}
+    eps = 1e-8
     for idx, i in enumerate(sigmoided_data):
         for idx2, j in enumerate(sigmoided_data):
             if idx >= idx2:
                 continue
 
-            distance = np.log(1 - np.abs(i[1] - j[1]))
+            distance = np.log(1 - np.abs(i[1] - j[1]) + eps)
             sum = np.abs(distance.sum())
 
             key1 = str(i[0])+'_'+str(j[0])
@@ -280,16 +379,83 @@ def call_log_dist_clustering(member_numbers, cluster_number):
 
     sigmoided = []
     idx_data = []
+
+    # for counter, i in enumerate(X):
+    #     list = []
+    #     z = to_Tensor(i, 1)
+    #     convolved = conv.forward(z).numpy()[0][0]
+    #     image_and_index = (member_ids[counter], convolved)
+    #
+    #     idx_data.append(image_and_index)
+    #     list.append(image_and_index)
+    #     sigmoided.append(list)
+
+    # for counter, i in enumerate(X):
+    #     list = []
+    #     ids = []
+    #     ids.append(counter)
+    #     ids = np.array(ids)
+    #     res = np.array(loss_representations(ids))
+    #     print(res.shape)
+    #
+    #     show_mnist(res)
+    #
+    #     image_and_index = (member_ids[counter], res)
+    #
+    #     idx_data.append(image_and_index)
+    #     list.append(image_and_index)
+    #     sigmoided.append(list)
+
+    X = Variable(torch.FloatTensor(X))
     for counter, i in enumerate(X):
         list = []
-        z = to_Tensor(i, 1)
-        convolved = conv.forward(z).numpy()[0][0]
-        image_and_index = (member_ids[counter], convolved)
+
+        i = i/255
+
+        mean, std = encoder(i)
+
+        e = torch.zeros(mean.shape).normal_()
+        z = std + mean
+
+        generated_image = decoder(z)
+
+        abs_difference = torch.abs(i - generated_image)
+        eps = 1e-8
+        L_reconstruction = torch.log(1 - abs_difference + eps)
+        #L_reconstruction = torch.nn.functional.softmax(L_reconstruction)
+
+        indexes_of_biggest_elements = L_reconstruction.detach().numpy().argsort()[:400][::-1]
+
+        reshape = i.view(28, 28)
+
+        inputs = neighbours(reshape)
+
+        print(indexes_of_biggest_elements)
+        indexes = np.array(indexes_of_biggest_elements)
+
+        representation = [inputs[x].detach().numpy() for x in indexes]
+        representation = np.array(representation)
+
+        representation = representation.flatten()
+
+        #print(representation)
+        # show_mnist(i)
+        # show_mnist(L_reconstruction.detach().numpy())
+
+        image_and_index = (member_ids[counter], representation)
         idx_data.append(image_and_index)
         list.append(image_and_index)
         sigmoided.append(list)
 
+        # output = decoder(z)
+        #
+        # image_and_index = (member_ids[counter], output.detach().numpy())
+        # idx_data.append(image_and_index)
+        # list.append(image_and_index)
+        # sigmoided.append(list)
+
     print("done with sigmoid")
+    #distances = calculate_distances(idx_data)
     distances = calculate_distances(idx_data)
     print("done with distances")
 
@@ -318,6 +484,6 @@ def call_log_dist_clustering(member_numbers, cluster_number):
 
 
 
-call_log_dist_clustering(300, 15)
-#log_distance_pairing(500)
-#get_centroids(10000)
+# call_log_dist_clustering(200, 15)
+# log_distance_pairing(1000)
+get_centroids(100)
