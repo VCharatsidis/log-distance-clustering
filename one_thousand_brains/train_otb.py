@@ -51,9 +51,10 @@ def neighbours(convolutions, perimeter=3):
     size = convolutions.shape[0]
     inputs = []
     reception_field = 2 * perimeter + 1
+    step = 3
 
-    for i in range(3, size-3):
-        for j in range(3, size-3):
+    for i in range(3, size-3, step):
+        for j in range(3, size-3, step):
             conv_loss_tensor = torch.zeros(reception_field, reception_field)
 
             for row in range(i-perimeter, i+perimeter+1):
@@ -81,43 +82,79 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     inputs = neighbours(convolutions[0, 0])
 
     size = len(inputs)
-    #print("size: ", size)
 
     colon_outputs = []
-    empty_predictions = torch.zeros(10 * size)
+    empty_predictions = torch.zeros(size, 10)
     predictions = torch.zeros(size, 10)
     #print("empty predictions: ", empty_predictions.shape)
 
+    flattened_empty_preds = torch.flatten(empty_predictions)
+    #print("flattened", flattened_empty_preds.shape)
     for i in range(size):
         colon = colons[i]
 
         #print("inputs[i]: ", inputs[i].shape)
-        #x_reduced = torch.cat([inputs[i], empty_predictions])
-        x_reduced = inputs[i]
+        x_reduced = torch.cat([inputs[i], flattened_empty_preds])
+
         #print("x_reduced: ", x_reduced.shape)
 
         prediction = colon.forward(x_reduced)
         #print("pred: ", prediction.shape)
 
         predictions[i] = prediction
+
+    flattened_predictions = torch.flatten(predictions)
+
+    for i in range(size):
+        colon = colons[i]
+
+        #print("inputs[i]: ", inputs[i].shape)
+        x_reduced = torch.cat([inputs[i], flattened_predictions])
+
+        #print("x_reduced: ", x_reduced.shape)
+
+        prediction = colon.forward(x_reduced)
+        #print("pred: ", prediction.shape)
+
+        empty_predictions[i] = prediction
+
+    flattened_empty_preds = torch.flatten(empty_predictions)
+
+    for i in range(size):
+        colon = colons[i]
+
+        #print("inputs[i]: ", inputs[i].shape)
+        x_reduced = torch.cat([inputs[i], flattened_empty_preds])
+
+        #print("x_reduced: ", x_reduced.shape)
+
+        prediction = colon.forward(x_reduced)
+        #print("pred: ", prediction.shape)
+
+        empty_predictions[i] = prediction
         colon_outputs.append(prediction)
 
     #print("predictions: ", predictions.shape)
     #input()
     total_loss = 0
 
+    loss = torch.zeros([])
     for idx1, i in enumerate(colon_outputs):
-        loss = torch.zeros([])
         for idx2, j in enumerate(colon_outputs):
-            if idx1 == idx2:
+            if idx1 >= idx2:
                 continue
 
-            kl = kl_divergence(torch.log(i), j.detach())
+            kl = kl_divergence(torch.log(i), j)
+            kl_2 = kl_divergence(torch.log(j), i)
 
             assert kl.item() > 0
             loss += kl
 
-        if train:
+            assert kl_2.item() > 0
+            loss += kl_2
+
+    if train:
+        for i in range(size):
             total_loss += loss.item()
             optimizers[idx1].zero_grad()
             loss.backward(retain_graph=True)
@@ -140,7 +177,7 @@ def train():
 
     print(X_test.shape)
 
-    number_convolutions = 484
+    number_convolutions = 64
 
     script_directory = os.path.split(os.path.abspath(__file__))[0]
 
@@ -154,7 +191,7 @@ def train():
         predictor_model = os.path.join(script_directory, filepath)
         colons_paths.append(predictor_model)
 
-        c = Colon(49)
+        c = Colon(689)
         colons.append(c)
 
         optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
@@ -175,11 +212,8 @@ def train():
             print()
             print("iteration: ", iteration)
 
-            print(colon_outputs)
             print("mean: ", mean)
-            print(ids)
             print(targets[ids])
-            print(X_train[ids])
 
             total_loss = 0
 
