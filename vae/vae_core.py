@@ -44,16 +44,16 @@ class VAE(nn.Module):
         sec_z = sec_std * e + sec_mean
 
         sec_output = self.sec_decoder(sec_z)
-        sec_input = torch.abs(L_reconstruction)
+        # sec_input = torch.abs(L_reconstruction)
+        #
+        # sec_input = sec_input / sec_input.max().expand_as(sec_input)
 
-        sec_input = sec_input / sec_input.max().expand_as(sec_input)
+        sec_L_reconstruction = self.calc_distance(sec_output, output)
 
-        sec_L_reconstruction = self.calc_distance(sec_output, sec_input)
+        KLD = 0.5 * (std.pow(2) + mean.pow(2) - 1 - torch.log(std.pow(2) + eps))
+        #sec_KLD = 0.5 * (sec_std.pow(2) + sec_mean.pow(2) - 1 - torch.log(sec_std.pow(2) + eps))
 
-
-        sec_KLD = 0.5 * (sec_std.pow(2) + sec_mean.pow(2) - 1 - torch.log(sec_std.pow(2) + eps))
-
-        elbo = sec_KLD.sum(dim=-1) - sec_L_reconstruction.sum(dim=-1) - L_reconstruction.sum(dim=-1)
+        elbo = KLD.sum(dim=-1) - sec_L_reconstruction.sum(dim=-1) - L_reconstruction.sum(dim=-1)
         elbo = elbo.mean()
 
         if math.isnan(elbo) or math.isinf(elbo):

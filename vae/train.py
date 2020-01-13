@@ -65,26 +65,26 @@ def main():
 
         if ARGS.zdim == 2:
             print("manifold")
-            # manifold = model.manifold_sample(256, model.decoder)
-            # save_sample(manifold, size_width, epoch, 16)
+            manifold = model.manifold_sample(64, model.decoder)
+            save_sample(manifold, size_width, epoch, True)
 
-            manifold = model.manifold_sample(256, model.sec_decoder)
-            save_sample(manifold, size_width, epoch, 16)
+            manifold = model.manifold_sample(64, model.sec_decoder)
+            save_sample(manifold, size_width, epoch, False)
 
         # mean_sample = model.sample(64, model.decoder)
-        # save_sample(mean_sample, size_width, epoch)
-
-        mean_sample2 = model.sample(64, model.sec_decoder)
-        save_sample(mean_sample2, size_width, epoch)
+        # save_sample(mean_sample, size_width, epoch, True)
+        #
+        # mean_sample2 = model.sample(64, model.sec_decoder)
+        # save_sample(mean_sample2, size_width, epoch, False)
 
         print(f"[Epoch {epoch}] train elbo: {train_elbo} val_elbo: {val_elbo}")
 
     mean_sample = model.sample(64)
-    save_sample(mean_sample, size_width, epoch)
+    save_sample(mean_sample, size_width, epoch, True)
 
     if ARGS.zdim == 2:
         print("manifold")
-        manifold = model.manifold_sample(256)
+        manifold = model.manifold_sample(64)
         save_sample(manifold, size_width, epoch, 16)
 
     # np.save('curves.npy', {'train': train_curve, 'val': val_curve})
@@ -104,7 +104,8 @@ def run_epoch(model, data, optimizer):
     train_elbo = epoch_iter(model, traindata[train_ids, :], optimizer)
 
     model.eval()
-    val_elbo = epoch_iter(model, valdata, optimizer)
+    val_ids = np.random.choice(len(valdata), size=300, replace=False)
+    val_elbo = epoch_iter(model, valdata[val_ids, :], optimizer)
 
     return train_elbo, val_elbo
 
@@ -146,10 +147,13 @@ def save_elbo_plot(train_curve, val_curve, filename):
     plt.savefig(filename)
 
 
-def save_sample(sample, size, epoch, nrow=8):
+def save_sample(sample, size, epoch, first, nrow=8):
     sample = sample.view(-1, 1, size, size)
     sample = make_grid(sample, nrow=nrow).detach().numpy().astype(np.float).transpose(1, 2, 0)
-    matplotlib.image.imsave(f"images/vae_manimani_{epoch}.png", sample)
+    if first:
+        matplotlib.image.imsave(f"images/vae_manimani_{epoch}.png", sample)
+    else:
+        matplotlib.image.imsave(f"images_sec/vae_manimani_{epoch}.png", sample)
 
 
 if __name__ == "__main__":
