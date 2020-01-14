@@ -13,10 +13,9 @@ import matplotlib.pyplot as plt
 from base_conv import BaseConv
 
 from sklearn.datasets import fetch_openml
-
+from multi_variate_mutual_info import compute_three_joint, three_variate_IID_loss
 import statistics
 from colon import Colon
-from losses import IID_loss, mi
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
@@ -73,95 +72,78 @@ def kl_divergence(p, q):
     return torch.nn.functional.kl_div(p, q)
 
 
+def encode_4_patches(image, colons):
+    i_1, i_2, i_3, i_4 = split_image_to_4(image)
+    print(i_1.shape)
+    flat_1 = torch.flatten(i_1)
+    flat_2 = torch.flatten(i_2)
+    flat_3 = torch.flatten(i_3)
+    flat_4 = torch.flatten(i_4)
+    print(flat_1.shape)
+
+    pred_1 = colons[0](flat_1)
+    pred_2 = colons[0](flat_2)
+    pred_3 = colons[0](flat_3)
+    pred_4 = colons[0](flat_4)
+
+    return pred_1, pred_2, pred_3, pred_4
+
+
+def encode_3_patches(image, colons):
+    i_1, i_2, i_3 = split_image_to_3(image)
+
+    flat_1 = torch.flatten(i_1)
+    flat_2 = torch.flatten(i_2)
+    flat_3 = torch.flatten(i_3)
+
+    pred_1 = colons[0](flat_1)
+    pred_2 = colons[1](flat_2)
+    pred_3 = colons[2](flat_3)
+
+    return pred_1, pred_2, pred_3
+
+
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     x_train = X[ids, :]
 
     x_tensor = to_Tensor(x_train, to_tensor_size)
-    convolutions = x_tensor/255
+    image = x_tensor/255
 
-    inputs = neighbours(convolutions[0, 0])
+    pred_1, pred_2, pred_3 = encode_3_patches(image, colons)
 
-    size = len(inputs)
+    joint = three_variate_IID_loss(pred_1, pred_2, pred_3, encode_3_patches)
 
-    colon_outputs = []
-    empty_predictions = torch.zeros(size, 10)
-    predictions = torch.zeros(size, 10)
-    #print("empty predictions: ", empty_predictions.shape)
-
-    flattened_empty_preds = torch.flatten(empty_predictions)
-    #print("flattened", flattened_empty_preds.shape)
-    for i in range(size):
-        colon = colons[i]
-
-        #print("inputs[i]: ", inputs[i].shape)
-        x_reduced = torch.cat([inputs[i], flattened_empty_preds])
-
-        #print("x_reduced: ", x_reduced.shape)
-
-        prediction = colon.forward(x_reduced)
-        #print("pred: ", prediction.shape)
-
-        predictions[i] = prediction
-
-    flattened_predictions = torch.flatten(predictions)
-
-    for i in range(size):
-        colon = colons[i]
-
-        #print("inputs[i]: ", inputs[i].shape)
-        x_reduced = torch.cat([inputs[i], flattened_predictions])
-
-        #print("x_reduced: ", x_reduced.shape)
-
-        prediction = colon.forward(x_reduced)
-        #print("pred: ", prediction.shape)
-
-        empty_predictions[i] = prediction
-
-    flattened_empty_preds = torch.flatten(empty_predictions)
-
-    for i in range(size):
-        colon = colons[i]
-
-        #print("inputs[i]: ", inputs[i].shape)
-        x_reduced = torch.cat([inputs[i], flattened_empty_preds])
-
-        #print("x_reduced: ", x_reduced.shape)
-
-        prediction = colon.forward(x_reduced)
-        #print("pred: ", prediction.shape)
-
-        empty_predictions[i] = prediction
-        colon_outputs.append(prediction)
-
-    #print("predictions: ", predictions.shape)
-    #input()
-    total_loss = 0
-
-    loss = torch.zeros([])
-    for idx1, i in enumerate(colon_outputs):
-        for idx2, j in enumerate(colon_outputs):
-            if idx1 >= idx2:
-                continue
-
-            kl = kl_divergence(torch.log(i), j)
-            kl_2 = kl_divergence(torch.log(j), i)
-
-            assert kl.item() > 0
-            loss += kl
-
-            assert kl_2.item() > 0
-            loss += kl_2
+    loss = joint.sum()
 
     if train:
-        for i in range(size):
-            total_loss += loss.item()
-            optimizers[idx1].zero_grad()
-            loss.backward(retain_graph=True)
-            optimizers[idx1].step()
+        for i in optimizers:
+            i.zero_grad()
+            loss.sum().backward(retain_graph=True)
+            i.step()
 
-    return colon_outputs, total_loss, torch.mean(predictions, dim=0)
+    return pred_1, pred_2, pred_3, loss
 
+
+def split_image_to_3(image):
+    image_shape = image.shape
+
+    image_a, image_b = torch.split(image, image_shape[2] // 2, dim=2)
+    image_3, image_4 = torch.split(image_b, image_shape[2] // 2, dim=3)
+
+    return image_a, image_3, image_4
+
+def split_image_to_4(image):
+    image_shape = image.shape
+
+    image_a, image_b = torch.split(image, image_shape[2]//2, dim=2)
+
+    image_1, image_2 = torch.split(image_a, image_shape[2]//2, dim=3)
+    image_3, image_4 = torch.split(image_b, image_shape[2]//2, dim=3)
+    # print(image_1.shape)
+    # print(image_2.shape)
+    # print(image_3.shape)
+    # print(image_4.shape)
+    return image_1, image_2, image_3, image_4
 
 def print_params(model):
     for param in model.parameters():
@@ -177,7 +159,7 @@ def train():
 
     print(X_test.shape)
 
-    number_convolutions = 64
+    number_colons = 4
 
     script_directory = os.path.split(os.path.abspath(__file__))[0]
 
@@ -186,12 +168,16 @@ def train():
     optimizers = []
     colons_paths = []
 
-    for i in range(number_convolutions):
+    for i in range(number_colons):
         filepath = 'colons\\colon_' + str(i) + '.model'
         predictor_model = os.path.join(script_directory, filepath)
         colons_paths.append(predictor_model)
 
-        c = Colon(689)
+        input = 196
+        if i == 0:
+            input = 392
+
+        c = Colon(input)
         colons.append(c)
 
         optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
@@ -206,13 +192,15 @@ def train():
         ids = np.random.choice(len(X_train), size=BATCH_SIZE_DEFAULT, replace=False)
 
         train = True
-        colon_outputs, loss, mean = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        p1, p2, p3, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             print()
             print("iteration: ", iteration)
-
-            print("mean: ", mean)
+            print(p1)
+            print(p2)
+            print(p3)
+            print("mean: ", mim.item())
             print(targets[ids])
 
             total_loss = 0
@@ -224,16 +212,16 @@ def train():
             for c, i in enumerate(test_ids):
                 if c % 100 == 0:
                     print("test iteration: "+str(c))
-                colon_outputs, loss, mean = forward_block(X_test, i, colons, optimizers, False, 1)
+                p1, p2, p3, mim = forward_block(X_test, i, colons, optimizers, False, 1)
 
-                total_loss += loss/number_convolutions
+                total_loss += mim/number_colons
 
             total_loss = total_loss / test_batch_size
 
             if max_loss > total_loss:
                 max_loss = total_loss
                 print("models saved iter: " + str(iteration))
-                for i in range(number_convolutions):
+                for i in range(number_colons):
                     torch.save(colons[i], colons_paths[i])
 
             print("total loss " + str(total_loss))
