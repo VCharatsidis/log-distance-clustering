@@ -21,7 +21,7 @@ from colon import Colon
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
 LEARNING_RATE_DEFAULT = 1e-5
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 1
+BATCH_SIZE_DEFAULT = 512
 HALF_BATCH = BATCH_SIZE_DEFAULT // 2
 EVAL_FREQ_DEFAULT = 100
 
@@ -106,10 +106,14 @@ def encode_3_patches(image, colons):
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     x_train = X[ids, :]
 
-    x_tensor = to_Tensor(x_train, to_tensor_size)
-    image = x_tensor/255
+    #x_tensor = to_Tensor(x_train, to_tensor_size)
 
-    pred_1, pred_2, pred_3 = encode_3_patches(image, colons)
+    x_tensor = Variable(torch.FloatTensor(x_train))
+    images = x_tensor/255
+    print(images[0])
+    print(images.shape)
+    input()
+    pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
 
     joint = three_variate_IID_loss(pred_1, pred_2, pred_3, encode_3_patches)
 
