@@ -19,11 +19,11 @@ from colon import Colon
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
-LEARNING_RATE_DEFAULT = 1e-5
+LEARNING_RATE_DEFAULT = 1e-3
 MAX_STEPS_DEFAULT = 30000
 BATCH_SIZE_DEFAULT = 2048
 HALF_BATCH = BATCH_SIZE_DEFAULT // 2
-EVAL_FREQ_DEFAULT = 100
+EVAL_FREQ_DEFAULT = 50
 
 FLAGS = None
 
@@ -101,8 +101,8 @@ def encode_3_patches(image, colons):
     # print("flat 3 ", flat_3.shape)
 
     pred_1 = colons[0](i_1)
-    pred_2 = colons[1](i_2)
-    pred_3 = colons[2](i_3)
+    pred_2 = colons[0](i_2)
+    pred_3 = colons[0](i_3)
 
     # print("pred_1 ", pred_1.shape)
     # print("pred_2 ", pred_2.shape)
@@ -125,10 +125,9 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
 
     if train:
-        for i in optimizers:
-            i.zero_grad()
-            loss.backward(retain_graph=True)
-            i.step()
+        optimizers[0].zero_grad()
+        loss.backward(retain_graph=True)
+        optimizers[0].step()
 
     return pred_1, pred_2, pred_3, loss
 
@@ -137,7 +136,7 @@ def split_image_to_3(images):
     image_shape = images.shape
 
     image_a, image_b = torch.split(images, image_shape[2] // 2, dim=3)
-    image_3, image_4 = torch.split(image_b, image_shape[2] // 2, dim=2)
+    image_3, image_4 = torch.split(images, image_shape[2] // 2, dim=2)
 
     # print(images.shape)
     # print("image a batch: ", image_a.shape)
@@ -145,7 +144,7 @@ def split_image_to_3(images):
     # print("image 3 batch: ", image_3.shape)
     # print("image 4 batch: ", image_4.shape)
 
-    return image_a, image_3, image_4
+    return image_a, image_b, image_4
 
 def split_image_to_4(image):
     image_shape = image.shape
@@ -183,20 +182,17 @@ def train():
     optimizers = []
     colons_paths = []
 
-    for i in range(number_colons):
-        filepath = 'colons\\colon_' + str(i) + '.model'
-        predictor_model = os.path.join(script_directory, filepath)
-        colons_paths.append(predictor_model)
+    filepath = 'colons\\colon_' + str(0) + '.model'
+    predictor_model = os.path.join(script_directory, filepath)
+    colons_paths.append(predictor_model)
 
-        input = 3200
-        if i == 0:
-            input = 5120
+    input = 5120
 
-        c = Colon(1, input)
-        colons.append(c)
+    c = Colon(1, input)
+    colons.append(c)
 
-        optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
-        optimizers.append(optimizer)
+    optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer)
 
     max_loss = 1999
 
@@ -240,8 +236,8 @@ def train():
             if max_loss > test_loss:
                 max_loss = test_loss
                 print("models saved iter: " + str(iteration))
-                for i in range(number_colons):
-                    torch.save(colons[i], colons_paths[i])
+                # for i in range(number_colons):
+                #     torch.save(colons[i], colons_paths[i])
 
             print("test loss " + str(test_loss))
             print("")
