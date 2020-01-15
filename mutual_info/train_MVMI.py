@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from base_conv import BaseConv
 
 from sklearn.datasets import fetch_openml
-from multi_variate_mutual_info import compute_three_joint, three_variate_IID_loss
+from multi_variate_mutual_info import three_variate_IID_loss
 import statistics
 from colon import Colon
 
@@ -21,7 +21,7 @@ from colon import Colon
 DNN_HIDDEN_UNITS_DEFAULT = '1000'
 LEARNING_RATE_DEFAULT = 1e-5
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 512
+BATCH_SIZE_DEFAULT = 2048
 HALF_BATCH = BATCH_SIZE_DEFAULT // 2
 EVAL_FREQ_DEFAULT = 100
 
@@ -82,9 +82,9 @@ def encode_4_patches(image, colons):
     print(flat_1.shape)
 
     pred_1 = colons[0](flat_1)
-    pred_2 = colons[0](flat_2)
-    pred_3 = colons[0](flat_3)
-    pred_4 = colons[0](flat_4)
+    pred_2 = colons[1](flat_2)
+    pred_3 = colons[2](flat_3)
+    pred_4 = colons[3](flat_4)
 
     return pred_1, pred_2, pred_3, pred_4
 
@@ -92,13 +92,23 @@ def encode_4_patches(image, colons):
 def encode_3_patches(image, colons):
     i_1, i_2, i_3 = split_image_to_3(image)
 
-    flat_1 = torch.flatten(i_1)
-    flat_2 = torch.flatten(i_2)
-    flat_3 = torch.flatten(i_3)
+    # flat_1 = torch.flatten(i_1, 1)
+    # flat_2 = torch.flatten(i_2, 1)
+    # flat_3 = torch.flatten(i_3, 1)
 
-    pred_1 = colons[0](flat_1)
-    pred_2 = colons[1](flat_2)
-    pred_3 = colons[2](flat_3)
+    # print("flat 1 ", flat_1.shape)
+    # print("flat 2 ", flat_2.shape)
+    # print("flat 3 ", flat_3.shape)
+
+    pred_1 = colons[0](i_1)
+    pred_2 = colons[1](i_2)
+    pred_3 = colons[2](i_3)
+
+    # print("pred_1 ", pred_1.shape)
+    # print("pred_2 ", pred_2.shape)
+    # print("pred_3 ", pred_3.shape)
+    # print(pred_1[0])
+    # input()
 
     return pred_1, pred_2, pred_3
 
@@ -106,33 +116,34 @@ def encode_3_patches(image, colons):
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     x_train = X[ids, :]
 
-    #x_tensor = to_Tensor(x_train, to_tensor_size)
+    x_tensor = to_Tensor(x_train, to_tensor_size)
 
-    x_tensor = Variable(torch.FloatTensor(x_train))
     images = x_tensor/255
-    print(images[0])
-    print(images.shape)
-    input()
+
     pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
 
-    joint = three_variate_IID_loss(pred_1, pred_2, pred_3, encode_3_patches)
-
-    loss = joint.sum()
+    loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
 
     if train:
         for i in optimizers:
             i.zero_grad()
-            loss.sum().backward(retain_graph=True)
+            loss.backward(retain_graph=True)
             i.step()
 
     return pred_1, pred_2, pred_3, loss
 
 
-def split_image_to_3(image):
-    image_shape = image.shape
+def split_image_to_3(images):
+    image_shape = images.shape
 
-    image_a, image_b = torch.split(image, image_shape[2] // 2, dim=2)
-    image_3, image_4 = torch.split(image_b, image_shape[2] // 2, dim=3)
+    image_a, image_b = torch.split(images, image_shape[2] // 2, dim=3)
+    image_3, image_4 = torch.split(image_b, image_shape[2] // 2, dim=2)
+
+    # print(images.shape)
+    # print("image a batch: ", image_a.shape)
+    # print("image b batch: ", image_b.shape)
+    # print("image 3 batch: ", image_3.shape)
+    # print("image 4 batch: ", image_4.shape)
 
     return image_a, image_3, image_4
 
@@ -177,11 +188,11 @@ def train():
         predictor_model = os.path.join(script_directory, filepath)
         colons_paths.append(predictor_model)
 
-        input = 196
+        input = 3200
         if i == 0:
-            input = 392
+            input = 5120
 
-        c = Colon(input)
+        c = Colon(1, input)
         colons.append(c)
 
         optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
@@ -190,8 +201,6 @@ def train():
     max_loss = 1999
 
     for iteration in range(MAX_STEPS_DEFAULT):
-        if iteration % 50 == 0:
-            print("iteration: ", iteration)
 
         ids = np.random.choice(len(X_train), size=BATCH_SIZE_DEFAULT, replace=False)
 
@@ -201,34 +210,40 @@ def train():
         if iteration % EVAL_FREQ_DEFAULT == 0:
             print()
             print("iteration: ", iteration)
-            print(p1)
-            print(p2)
-            print(p3)
-            print("mean: ", mim.item())
-            print(targets[ids])
+            print(p1[0])
+            print(torch.max(p1[0], 0))
+            print(torch.max(p2[0], 0))
+            print(torch.max(p3[0], 0))
+            print("loss: ", mim.item())
+            print(targets[ids[0]])
 
-            total_loss = 0
+            print(p1[1])
+            print(torch.max(p1[1], 0))
+            print(torch.max(p2[1], 0))
+            print(torch.max(p3[1], 0))
+            print("loss: ", mim.item())
+            print(targets[ids[1]])
 
-            test_batch_size = 10
+            print(p1[2])
+            print(torch.max(p1[2], 0))
+            print(torch.max(p2[2], 0))
+            print(torch.max(p3[2], 0))
+            print("loss: ", mim.item())
+            print(targets[ids[2]])
 
-            test_ids = np.random.choice(len(X_test), size=test_batch_size, replace=False)
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
 
-            for c, i in enumerate(test_ids):
-                if c % 100 == 0:
-                    print("test iteration: "+str(c))
-                p1, p2, p3, mim = forward_block(X_test, i, colons, optimizers, False, 1)
+            p1, p2, p3, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
 
-                total_loss += mim/number_colons
+            test_loss = mim.item()
 
-            total_loss = total_loss / test_batch_size
-
-            if max_loss > total_loss:
-                max_loss = total_loss
+            if max_loss > test_loss:
+                max_loss = test_loss
                 print("models saved iter: " + str(iteration))
                 for i in range(number_colons):
                     torch.save(colons[i], colons_paths[i])
 
-            print("total loss " + str(total_loss))
+            print("test loss " + str(test_loss))
             print("")
 
 

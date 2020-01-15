@@ -14,7 +14,7 @@ class Colon(nn.Module):
     Once initialized an MLP object can perform forward.
     """
 
-    def __init__(self, n_inputs):
+    def __init__(self, n_channels, n_inputs):
         """
         Initializes MLP object.
         Args:
@@ -29,17 +29,24 @@ class Colon(nn.Module):
         """
         super(Colon, self).__init__()
         hidden = 30
-        self.layers = nn.Sequential(
-            nn.Linear(n_inputs, 100),
+        self.conv = nn.Sequential(
+            nn.Conv2d(n_channels, 64, kernel_size=3, stride=1, padding=1),
             nn.Tanh(),
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
 
-            nn.Linear(100, 100),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.Tanh(),
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
+        )
+
+        self.linear = nn.Sequential(
+            nn.Linear(n_inputs, 100),
             nn.Tanh(),
 
             nn.Linear(100, 10)
         )
 
-        self.softmax = nn.Softmax(dim=0)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         """
@@ -50,10 +57,11 @@ class Colon(nn.Module):
         Returns:
           out: outputs of the network
         """
-        temperature = 1
 
-        logits = self.layers(x)
+        conv = self.conv(x)
+        conv = torch.flatten(conv, 1)
 
-        out = self.softmax(logits/temperature)
+        logits = self.linear(conv)
+        out = self.softmax(logits)
 
         return out
