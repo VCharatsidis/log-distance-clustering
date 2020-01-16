@@ -32,19 +32,19 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   # print(joint_1_2_3.sum(dim=2).view(k, k, 1).shape)
   # input()
 
-  # p_1_2_3 = joint_1_2_3_4.sum(dim=3).view(k, k, k, 1).expand(k, k, k, k)
-  # p_1_2_4 = joint_1_2_3_4.sum(dim=2).view(k, k, 1, k).expand(k, k, k, k)
-  # p_1_3_4 = joint_1_2_3_4.sum(dim=1).view(k, 1, k, k).expand(k, k, k, k)
-  # p_2_3_4 = joint_1_2_3_4.sum(dim=0).view(1, k, k, k).expand(k, k, k, k)
-  #
-  # p_1_2 = joint_1_2_3_4.sum(dim=3).sum(dim=2).view(k, k, 1, 1).expand(k, k, k, k)
-  # p_1_3 = joint_1_2_3_4.sum(dim=1).sum(dim=2).view(k, 1, k, 1).expand(k, k, k, k)
-  # p_1_4 = joint_1_2_3_4.sum(dim=1).sum(dim=1).view(k, 1, 1, k).expand(k, k, k, k)
-  #
-  # p_2_3 = joint_1_2_3_4.sum(dim=0).sum(dim=2).view(1, k, k, 1).expand(k, k, k, k)
-  # p_2_4 = joint_1_2_3_4.sum(dim=0).sum(dim=1).view(1, k, 1, k).expand(k, k, k, k)
-  #
-  # p_3_4 = joint_1_2_3_4.sum(dim=0).sum(dim=0).view(1, 1, k, k).expand(k, k, k, k)
+  p_1_2_3 = joint_1_2_3_4.sum(dim=3).view(k, k, k, 1).expand(k, k, k, k)
+  p_1_2_4 = joint_1_2_3_4.sum(dim=2).view(k, k, 1, k).expand(k, k, k, k)
+  p_1_3_4 = joint_1_2_3_4.sum(dim=1).view(k, 1, k, k).expand(k, k, k, k)
+  p_2_3_4 = joint_1_2_3_4.sum(dim=0).view(1, k, k, k).expand(k, k, k, k)
+
+  p_1_2 = joint_1_2_3_4.sum(dim=3).sum(dim=2).view(k, k, 1, 1).expand(k, k, k, k)
+  p_1_3 = joint_1_2_3_4.sum(dim=3).sum(dim=1).view(k, 1, k, 1).expand(k, k, k, k)
+  p_1_4 = joint_1_2_3_4.sum(dim=2).sum(dim=1).view(k, 1, 1, k).expand(k, k, k, k)
+
+  p_2_3 = joint_1_2_3_4.sum(dim=3).sum(dim=0).view(1, k, k, 1).expand(k, k, k, k)
+  p_2_4 = joint_1_2_3_4.sum(dim=2).sum(dim=0).view(1, k, 1, k).expand(k, k, k, k)
+
+  p_3_4 = joint_1_2_3_4.sum(dim=1).sum(dim=0).view(1, 1, k, k).expand(k, k, k, k)
 
   # avoid NaN losses. Effect will get cancelled out by p_i_j tiny anyway
   # print(joint_1_2_3)
@@ -75,7 +75,7 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   numerator = torch.log(joint_1_2_3_4)
   denominator = torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
 
-  coeff = 1.1
+  coeff = 1.05
   loss = - joint_1_2_3_4 * (numerator - coeff * denominator)
   loss = loss.sum()
   #loss = torch.abs(loss)
@@ -100,13 +100,10 @@ def joint(x_1, x_2, x_3, x_4):
   x_3_unsq = x_3.unsqueeze(1).unsqueeze(2)
 
   combine_1_2_3 = combine_1_2.unsqueeze(3) * x_3_unsq
-
   x_4_unsq = x_4.unsqueeze(1).unsqueeze(2).unsqueeze(3)
 
   combine_1_2_3_4 = combine_1_2_3.unsqueeze(4) * x_4_unsq
-
   combine_1_2_3_4 = combine_1_2_3_4.sum(dim=0)  # k, k, k, k
-
   combine_1_2_3_4 = combine_1_2_3_4 / combine_1_2_3_4.sum()  # normalise
 
   return combine_1_2_3_4
