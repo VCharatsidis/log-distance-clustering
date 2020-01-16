@@ -9,9 +9,9 @@ def three_variate_IID_loss(x_1, x_2, x_3, EPS=sys.float_info.epsilon):
   joint_1_2_3 = joint(x_1, x_2, x_3)
   assert (joint_1_2_3.size() == (k, k, k))
 
-  sum_i = joint_1_2_3.sum(dim=1).sum(dim=1).view(k, 1, 1)
-  sum_j = joint_1_2_3.sum(dim=0).sum(dim=1).view(1, k, 1)
-  sum_z = joint_1_2_3.sum(dim=0).sum(dim=0).view(1, 1, k)
+  # sum_i = joint_1_2_3.sum(dim=1).sum(dim=1).view(k, 1, 1)
+  # sum_j = joint_1_2_3.sum(dim=0).sum(dim=1).view(1, k, 1)
+  # sum_z = joint_1_2_3.sum(dim=0).sum(dim=0).view(1, 1, k)
 
   # if random.uniform(0, 1) > 0.99:
   #   print(sum_i)
@@ -24,7 +24,7 @@ def three_variate_IID_loss(x_1, x_2, x_3, EPS=sys.float_info.epsilon):
 
   # print("p")
   # print(p_i.shape)
-  #
+
   # input()
 
   # print(joint_1_2_3.sum(dim=2))
@@ -52,7 +52,8 @@ def three_variate_IID_loss(x_1, x_2, x_3, EPS=sys.float_info.epsilon):
   numerator = torch.log(joint_1_2_3)
   denominator = torch.log(p_i) + torch.log(p_j) + torch.log(p_z)
 
-  loss = - joint_1_2_3 * (numerator - denominator)
+  coeff = 1.1
+  loss = - joint_1_2_3 * (numerator - coeff * denominator)
   loss = loss.sum()
   #loss = torch.abs(loss)
   return loss

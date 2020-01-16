@@ -10,32 +10,20 @@ import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-from base_conv import BaseConv
-
 from sklearn.datasets import fetch_openml
-from multi_variate_mutual_info import three_variate_IID_loss
-import statistics
+from three_variate_mutual_info import three_variate_IID_loss
+from four_variate_mi import four_variate_IID_loss
+from ensemble import Ensemble
+
 from colon import Colon
 
 # Default constants
-DNN_HIDDEN_UNITS_DEFAULT = '1000'
-LEARNING_RATE_DEFAULT = 1e-3
+LEARNING_RATE_DEFAULT = 5e-4
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 2048
-HALF_BATCH = BATCH_SIZE_DEFAULT // 2
-EVAL_FREQ_DEFAULT = 50
+BATCH_SIZE_DEFAULT = 900
+EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
-
-
-def calc_distance(out, y):
-    abs_difference = torch.abs(out - y)
-    eps = 1e-8
-    information_loss = torch.log(1 - abs_difference + eps)
-
-    mean = torch.mean(information_loss)
-
-    return torch.abs(mean)
 
 
 def flatten(out):
@@ -74,17 +62,11 @@ def kl_divergence(p, q):
 
 def encode_4_patches(image, colons):
     i_1, i_2, i_3, i_4 = split_image_to_4(image)
-    print(i_1.shape)
-    flat_1 = torch.flatten(i_1)
-    flat_2 = torch.flatten(i_2)
-    flat_3 = torch.flatten(i_3)
-    flat_4 = torch.flatten(i_4)
-    print(flat_1.shape)
 
-    pred_1 = colons[0](flat_1)
-    pred_2 = colons[1](flat_2)
-    pred_3 = colons[2](flat_3)
-    pred_4 = colons[3](flat_4)
+    pred_1 = colons[0](i_1)
+    pred_2 = colons[0](i_2)
+    pred_3 = colons[0](i_3)
+    pred_4 = colons[0](i_4)
 
     return pred_1, pred_2, pred_3, pred_4
 
@@ -92,17 +74,12 @@ def encode_4_patches(image, colons):
 def encode_3_patches(image, colons):
     i_1, i_2, i_3 = split_image_to_3(image)
 
-    # flat_1 = torch.flatten(i_1, 1)
-    # flat_2 = torch.flatten(i_2, 1)
-    # flat_3 = torch.flatten(i_3, 1)
-
-    # print("flat 1 ", flat_1.shape)
-    # print("flat 2 ", flat_2.shape)
-    # print("flat 3 ", flat_3.shape)
-
     pred_1 = colons[0](i_1)
     pred_2 = colons[0](i_2)
     pred_3 = colons[0](i_3)
+
+    # image = image.to('cuda')
+    # pred_1, pred_2, pred_3 = colons[0](image)
 
     # print("pred_1 ", pred_1.shape)
     # print("pred_2 ", pred_2.shape)
@@ -120,16 +97,18 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     images = x_tensor/255
 
-    pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
+    # pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
+    # loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
 
-    loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
+    pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
+    loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
 
     if train:
         optimizers[0].zero_grad()
         loss.backward(retain_graph=True)
         optimizers[0].step()
 
-    return pred_1, pred_2, pred_3, loss
+    return pred_1, pred_2, pred_3, pred_4, loss
 
 
 def split_image_to_3(images):
@@ -137,6 +116,12 @@ def split_image_to_3(images):
 
     image_a, image_b = torch.split(images, image_shape[2] // 2, dim=3)
     image_3, image_4 = torch.split(images, image_shape[2] // 2, dim=2)
+
+    image_a = image_a.to('cuda')
+    image_b = image_b.to('cuda')
+    image_4 = image_4.to('cuda')
+
+    #images = images.to('cuda')
 
     # print(images.shape)
     # print("image a batch: ", image_a.shape)
@@ -149,10 +134,15 @@ def split_image_to_3(images):
 def split_image_to_4(image):
     image_shape = image.shape
 
-    image_a, image_b = torch.split(image, image_shape[2]//2, dim=2)
+    #image_a, image_b = torch.split(image, image_shape[2]//2, dim=2)
 
-    image_1, image_2 = torch.split(image_a, image_shape[2]//2, dim=3)
-    image_3, image_4 = torch.split(image_b, image_shape[2]//2, dim=3)
+    image_1, image_2 = torch.split(image, image_shape[2]//2, dim=2)
+    image_3, image_4 = torch.split(image, image_shape[2]//2, dim=3)
+
+    image_1 = image_1.to('cuda')
+    image_2 = image_2.to('cuda')
+    image_3 = image_3.to('cuda')
+    image_4 = image_4.to('cuda')
     # print(image_1.shape)
     # print(image_2.shape)
     # print(image_3.shape)
@@ -166,7 +156,7 @@ def print_params(model):
 
 def train():
     mnist = fetch_openml('mnist_784', version=1, cache=True)
-    targets = mnist.target
+    targets = mnist.target[60000:]
 
     X_train = mnist.data[:60000]
     X_test = mnist.data[60000:]
@@ -186,9 +176,16 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 5120
+    #four_split = 3200
+    two_split = 5120
 
-    c = Colon(1, input)
+    #two_split_3_conv = 3840
+
+    # c = Ensemble()
+    # c.cuda()
+
+    c = Colon(1, two_split)
+    c.cuda()
     colons.append(c)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
@@ -201,35 +198,32 @@ def train():
         ids = np.random.choice(len(X_train), size=BATCH_SIZE_DEFAULT, replace=False)
 
         train = True
-        p1, p2, p3, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+            p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
             print()
             print("iteration: ", iteration)
-            print(p1[0])
-            print(torch.max(p1[0], 0))
-            print(torch.max(p2[0], 0))
-            print(torch.max(p3[0], 0))
-            print("loss: ", mim.item())
-            print(targets[ids[0]])
 
-            print(p1[1])
-            print(torch.max(p1[1], 0))
-            print(torch.max(p2[1], 0))
-            print(torch.max(p3[1], 0))
-            print("loss: ", mim.item())
-            print(targets[ids[1]])
+            print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+            for i in range(100):
+                if i == 10:
+                    print("")
 
-            print(p1[2])
-            print(torch.max(p1[2], 0))
-            print(torch.max(p2[2], 0))
-            print(torch.max(p3[2], 0))
-            print("loss: ", mim.item())
-            print(targets[ids[2]])
+                val, index = torch.max(p1[i], 0)
+                val, index2 = torch.max(p2[i], 0)
+                val, index3 = torch.max(p3[i], 0)
+                val, index4 = torch.max(p4[i], 0)
 
-            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+                string = str(index.data.cpu().numpy())+" "+ str(index2.data.cpu().numpy()) + " "+\
+                         str(index3.data.cpu().numpy())+" "+ str(index4.data.cpu().numpy()) +" , "
 
-            p1, p2, p3, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+                print_dict[targets[test_ids[i]]] += string
+
+
+            for i in print_dict.keys():
+                print(i, " : ", print_dict[i])
 
             test_loss = mim.item()
 
@@ -267,8 +261,7 @@ def main():
 if __name__ == '__main__':
     # Command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dnn_hidden_units', type=str, default=DNN_HIDDEN_UNITS_DEFAULT,
-                        help='Comma separated list of number of units in each hidden layer')
+
     parser.add_argument('--learning_rate', type=float, default=LEARNING_RATE_DEFAULT,
                         help='Learning rate')
     parser.add_argument('--max_steps', type=int, default=MAX_STEPS_DEFAULT,
