@@ -18,10 +18,10 @@ from ensemble import Ensemble
 from colon import Colon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-4
+LEARNING_RATE_DEFAULT = 5e-3
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 256
-EVAL_FREQ_DEFAULT = 100
+BATCH_SIZE_DEFAULT = 1224
+EVAL_FREQ_DEFAULT = 10
 
 FLAGS = None
 
@@ -68,10 +68,10 @@ def encode_4_patches(image,
                      p4=torch.zeros([BATCH_SIZE_DEFAULT, 10])):
 
     i_1, i_2, i_3, i_4 = split_image_to_4(image)
-    p1 = p1.to('cuda')
-    p2 = p2.to('cuda')
-    p3 = p3.to('cuda')
-    p4 = p4.to('cuda')
+    # p1 = p1.to('cuda')
+    # p2 = p2.to('cuda')
+    # p3 = p3.to('cuda')
+    # p4 = p4.to('cuda')
 
     pred_1 = colons[0](i_1, p2, p3, p4)
     pred_2 = colons[0](i_2, p1, p3, p4)
@@ -128,9 +128,9 @@ def split_image_to_3(images):
     image_a, image_b = torch.split(images, image_shape[2] // 2, dim=3)
     image_3, image_4 = torch.split(images, image_shape[2] // 2, dim=2)
 
-    image_a = image_a.to('cuda')
-    image_b = image_b.to('cuda')
-    image_4 = image_4.to('cuda')
+    # image_a = image_a.to('cuda')
+    # image_b = image_b.to('cuda')
+    # image_4 = image_4.to('cuda')
 
     #images = images.to('cuda')
 
@@ -150,10 +150,10 @@ def split_image_to_4(image):
     image_1, image_2 = torch.split(image, image_shape[2]//2, dim=2)
     image_3, image_4 = torch.split(image, image_shape[2]//2, dim=3)
 
-    image_1 = image_1.to('cuda')
-    image_2 = image_2.to('cuda')
-    image_3 = image_3.to('cuda')
-    image_4 = image_4.to('cuda')
+    # image_1 = image_1.to('cuda')
+    # image_2 = image_2.to('cuda')
+    # image_3 = image_3.to('cuda')
+    # image_4 = image_4.to('cuda')
     # print(image_1.shape)
     # print(image_2.shape)
     # print(image_3.shape)
@@ -218,7 +218,7 @@ def train():
     # c.cuda()
 
     c = Colon(1, two_split)
-    c.cuda()
+    #c.cuda()
     colons.append(c)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)

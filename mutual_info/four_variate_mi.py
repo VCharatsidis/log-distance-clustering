@@ -23,10 +23,10 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   p_3 = joint_probability_1_2_3_4.sum(dim=0).sum(dim=0).sum(dim=1).view(1, 1, k, 1).expand(k, k, k, k)
   p_4 = joint_probability_1_2_3_4.sum(dim=0).sum(dim=0).sum(dim=0).view(1, 1, 1, k).expand(k, k, k, k)
 
-  p_1_2_3 = joint_probability_1_2_3_4.sum(dim=3).view(k, k, k, 1).expand(k, k, k, k)
-  p_1_2_4 = joint_probability_1_2_3_4.sum(dim=2).view(k, k, 1, k).expand(k, k, k, k)
-  p_1_3_4 = joint_probability_1_2_3_4.sum(dim=1).view(k, 1, k, k).expand(k, k, k, k)
-  p_2_3_4 = joint_probability_1_2_3_4.sum(dim=0).view(1, k, k, k).expand(k, k, k, k)
+  marginal_4 = joint_probability_1_2_3_4.sum(dim=3).view(k, k, k, 1).expand(k, k, k, k)
+  marginal_3 = joint_probability_1_2_3_4.sum(dim=2).view(k, k, 1, k).expand(k, k, k, k)
+  marginal_2 = joint_probability_1_2_3_4.sum(dim=1).view(k, 1, k, k).expand(k, k, k, k)
+  marginal_1 = joint_probability_1_2_3_4.sum(dim=0).view(1, k, k, k).expand(k, k, k, k)
 
   p_1_2 = joint_probability_1_2_3_4.sum(dim=3).sum(dim=2).view(k, k, 1, 1).expand(k, k, k, k)
   p_1_3 = joint_probability_1_2_3_4.sum(dim=3).sum(dim=1).view(k, 1, k, 1).expand(k, k, k, k)
@@ -45,43 +45,69 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   p_3[(p_3 < EPS).data] = EPS
   p_4[(p_4 < EPS).data] = EPS
 
-  p_1_2_3[(p_1_2_3 < EPS).data] = EPS
-  p_1_2_4[(p_1_2_4 < EPS).data] = EPS
-  p_1_3_4[(p_1_3_4 < EPS).data] = EPS
-  p_2_3_4[(p_2_3_4 < EPS).data] = EPS
+  # marginal_4[(marginal_4 < EPS).data] = EPS
+  # marginal_3[(marginal_3 < EPS).data] = EPS
+  # marginal_2[(marginal_2 < EPS).data] = EPS
+  # marginal_1[(marginal_1 < EPS).data] = EPS
+  #
+  # p_1_2[(p_1_2 < EPS).data] = EPS
+  # p_1_3[(p_1_3 < EPS).data] = EPS
+  # p_1_4[(p_1_4 < EPS).data] = EPS
+  #
+  # p_2_3[(p_2_3 < EPS).data] = EPS
+  # p_2_4[(p_2_4 < EPS).data] = EPS
+  #
+  # p_3_4[(p_3_4 < EPS).data] = EPS
 
-  p_1_2[(p_1_2 < EPS).data] = EPS
-  p_1_3[(p_1_3 < EPS).data] = EPS
-  p_1_4[(p_1_4 < EPS).data] = EPS
+  # mvmi = multi_variate_mutual_info(joint_probability_1_2_3_4,
+  #                               p_1_2,
+  #                               p_1_3,
+  #                               p_1_4,
+  #                               p_2_3,
+  #                               p_2_4,
+  #                               p_3_4,
+  #                               marginal_4,
+  #                               marginal_3,
+  #                               marginal_2,
+  #                               marginal_1,
+  #                               p_1,
+  #                               p_2,
+  #                               p_3,
+  #                               p_4)
 
-  p_2_3[(p_2_3 < EPS).data] = EPS
-  p_2_4[(p_2_4 < EPS).data] = EPS
-
-  p_3_4[(p_3_4 < EPS).data] = EPS
-
-  mvmi = multi_variate_mutual_info(joint_probability_1_2_3_4,
-                                p_1_2,
-                                p_1_3,
-                                p_1_4,
-                                p_2_3,
-                                p_2_4,
-                                p_3_4,
-                                p_1_2_3,
-                                p_1_2_4,
-                                p_1_3_4,
-                                p_2_3_4,
-                                p_1,
-                                p_2,
-                                p_3,
-                                p_4)
-
-  total_corr = total_correlation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4)
-
-  loss = mvmi
+  loss = total_correlation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4)
   loss = loss.sum()
 
   return loss
 
+
+def dual_total_correlation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4, marginal_1, marginal_2, marginal_3, marginal_4):
+    joint_entr = joint_entropy(joint_probability_1_2_3_4)
+
+    conditional_entropy_1 = -joint_probability_1_2_3_4 * torch.log(p_1)
+    conditional_entropy_2 = -joint_probability_1_2_3_4 * torch.log(p_2)
+    conditional_entropy_3 = -joint_probability_1_2_3_4 * torch.log(p_3)
+    conditional_entropy_4 = -joint_probability_1_2_3_4 * torch.log(p_4)
+
+    # conditional_entropy_1 = joint_entr - (- p_1 * torch.log(p_1))
+    # conditional_entropy_2 = joint_entr - (- p_2 * torch.log(p_2))
+    # conditional_entropy_3 = joint_entr - (- p_3 * torch.log(p_3))
+    # conditional_entropy_4 = joint_entr - (- p_4 * torch.log(p_4))
+
+    conditional_entropies = conditional_entropy_1 + conditional_entropy_2 + conditional_entropy_3 + conditional_entropy_4
+
+    dtc = joint_entr - conditional_entropies
+    normalised_dtc = dtc / joint_entr
+
+    return normalised_dtc
+
+
+def reverse_total_crrelation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4):
+  numerator = torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
+  denominator = torch.log(joint_probability_1_2_3_4)
+
+  rev = - p_1 * p_2 * p_3 * p_4 * (numerator - denominator)
+  return rev
 
 def total_correlation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4):
     numerator = torch.log(joint_probability_1_2_3_4)
@@ -122,7 +148,10 @@ def multi_variate_mutual_info(joint_probability_1_2_3_4,
                   torch.log(p_1_2_4) + \
                   torch.log(p_1_3_4) + \
                   torch.log(p_2_3_4) + \
-                  torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
+                  torch.log(p_1) + \
+                  torch.log(p_2) + \
+                  torch.log(p_3) + \
+                  torch.log(p_4)
 
     multi_variate_mi = - joint_probability_1_2_3_4 * (numerator - denominator)
 
