@@ -23,15 +23,6 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   p_3 = joint_1_2_3_4.sum(dim=0).sum(dim=0).sum(dim=1).view(1, 1, k, 1).expand(k, k, k, k)
   p_4 = joint_1_2_3_4.sum(dim=0).sum(dim=0).sum(dim=0).view(1, 1, 1, k).expand(k, k, k, k)
 
-  # print("p")
-  # print(p_i.shape)
-
-  # input()
-
-  # print(joint_1_2_3.sum(dim=2))
-  # print(joint_1_2_3.sum(dim=2).view(k, k, 1).shape)
-  # input()
-
   p_1_2_3 = joint_1_2_3_4.sum(dim=3).view(k, k, k, 1).expand(k, k, k, k)
   p_1_2_4 = joint_1_2_3_4.sum(dim=2).view(k, k, 1, k).expand(k, k, k, k)
   p_1_3_4 = joint_1_2_3_4.sum(dim=1).view(k, 1, k, k).expand(k, k, k, k)
@@ -47,35 +38,48 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   p_3_4 = joint_1_2_3_4.sum(dim=1).sum(dim=0).view(1, 1, k, k).expand(k, k, k, k)
 
   # avoid NaN losses. Effect will get cancelled out by p_i_j tiny anyway
-  # print(joint_1_2_3)
-  # print(joint_1_2_3.shape)
-  # print(joint_1_2_3[0][0].shape)
-  # joint_1_2_3[0][joint_1_2_3[0] < EPS] = EPS
-  # joint_1_2_3[:, (joint_1_2_3 < EPS).data, :] = EPS
-  # joint_1_2_3[(joint_1_2_3 < EPS).data, :, :] = EPS
-  # p_j[(p_j < EPS).data] = EPS
-  # p_i[(p_i < EPS).data] = EPS
-  # p_z[(p_z < EPS).data] = EPS
 
-  # numerator = torch.log(joint_1_2_3_4) + \
-  #             torch.log(p_1_2) + \
-  #             torch.log(p_1_3) + \
-  #             torch.log(p_1_4) + \
-  #             torch.log(p_2_3) + \
-  #             torch.log(p_2_4) + \
-  #             torch.log(p_3_4)
-  #
-  # denominator = torch.log(p_1_2_3) + \
-  #               torch.log(p_1_2_4) + \
-  #               torch.log(p_1_3_4) + \
-  #               torch.log(p_2_3_4) + \
-  #               torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
+  joint_1_2_3_4[joint_1_2_3_4 < EPS] = EPS
+  p_1[(p_1 < EPS).data] = EPS
+  p_2[(p_2 < EPS).data] = EPS
+  p_3[(p_3 < EPS).data] = EPS
+  p_4[(p_4 < EPS).data] = EPS
+
+  p_1_2_3[(p_1_2_3 < EPS).data] = EPS
+  p_1_2_4[(p_1_2_4 < EPS).data] = EPS
+  p_1_3_4[(p_1_3_4 < EPS).data] = EPS
+  p_2_3_4[(p_2_3_4 < EPS).data] = EPS
+
+  p_1_2[(p_1_2 < EPS).data] = EPS
+  p_1_3[(p_1_3 < EPS).data] = EPS
+  p_1_4[(p_1_4 < EPS).data] = EPS
+
+  p_2_3[(p_2_3 < EPS).data] = EPS
+  p_2_4[(p_2_4 < EPS).data] = EPS
+
+  p_3_4[(p_3_4 < EPS).data] = EPS
+
+  numerator = torch.log(joint_1_2_3_4) + \
+              torch.log(p_1_2) + \
+              torch.log(p_1_3) + \
+              torch.log(p_1_4) + \
+              torch.log(p_2_3) + \
+              torch.log(p_2_4) + \
+              torch.log(p_3_4)
+
+  denominator = torch.log(p_1_2_3) + \
+                torch.log(p_1_2_4) + \
+                torch.log(p_1_3_4) + \
+                torch.log(p_2_3_4) + \
+                torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
+
 
   # Total correlation
   numerator = torch.log(joint_1_2_3_4)
   denominator = torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
 
-  coeff = 1.05
+
+  coeff = 1.00
   loss = - joint_1_2_3_4 * (numerator - coeff * denominator)
   loss = loss.sum()
   #loss = torch.abs(loss)

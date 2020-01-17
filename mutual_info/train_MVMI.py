@@ -20,7 +20,7 @@ from colon import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-3
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 730
+BATCH_SIZE_DEFAULT = 256
 EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
@@ -232,46 +232,30 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        p1 = p1.to('cuda')
-        p2 = p2.to('cuda')
-        p3 = p3.to('cuda')
-        p4 = p4.to('cuda')
         p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-        p1 = p1.to('cuda')
-        p2 = p2.to('cuda')
-        p3 = p3.to('cuda')
-        p4 = p4.to('cuda')
         p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
-            p1 = p1.to('cuda')
-            p2 = p2.to('cuda')
-            p3 = p3.to('cuda')
-            p4 = p4.to('cuda')
             p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-            p1 = p1.to('cuda')
-            p2 = p2.to('cuda')
-            p3 = p3.to('cuda')
-            p4 = p4.to('cuda')
             p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
             print()
             print("iteration: ", iteration)
 
             print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-            for i in range(100):
+            for i in range(120):
                 if i == 10:
                     print("")
 
                 val, index = torch.max(p1[i], 0)
                 val, index2 = torch.max(p2[i], 0)
                 val, index3 = torch.max(p3[i], 0)
-                #val, index4 = torch.max(p4[i], 0)
+                val, index4 = torch.max(p4[i], 0)
 
                 string = str(index.data.cpu().numpy())+" "+ str(index2.data.cpu().numpy()) + " "+\
-                         str(index3.data.cpu().numpy())+" , "#+ str(index4.data.cpu().numpy()) +" , "
+                         str(index3.data.cpu().numpy())+" "+ str(index4.data.cpu().numpy()) +", "
 
                 print_dict[targets[test_ids[i]]] += string
 
