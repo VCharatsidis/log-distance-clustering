@@ -106,14 +106,14 @@ def reverse_total_crrelation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4):
   numerator = torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
   denominator = torch.log(joint_probability_1_2_3_4)
 
-  rev = - p_1 * p_2 * p_3 * p_4 * (numerator - denominator)
+  rev = - (p_1 * p_2 * p_3 * p_4) * (numerator - denominator)
   return rev
 
 def total_correlation(joint_probability_1_2_3_4, p_1, p_2, p_3, p_4):
     numerator = torch.log(joint_probability_1_2_3_4)
     denominator = torch.log(p_1) + torch.log(p_2) + torch.log(p_3) + torch.log(p_4)
 
-    total_corr = - joint_probability_1_2_3_4 * (numerator - denominator)
+    total_corr = - joint_probability_1_2_3_4 * (numerator - denominator) * (-denominator)
     return total_corr
 
 
