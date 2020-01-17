@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4e4b8429-d841-4547-bff1-3c027a96a34a" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mutual_info/train_MVMI.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/train_MVMI.py" afterDir="false" />
     </list>
@@ -29,8 +28,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/mutual_info/train_MVMI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="22" column="24" selection-start-line="22" selection-start-column="21" selection-end-line="22" selection-end-column="24" />
+            <state relative-caret-position="187">
+              <caret line="23" column="21" selection-start-line="23" selection-start-column="21" selection-end-line="23" selection-end-column="21" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -89,8 +88,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/four_variate_mi.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1071">
-              <caret line="81" column="14" selection-start-line="81" selection-start-column="13" selection-end-line="81" selection-end-column="14" />
+            <state relative-caret-position="2142">
+              <caret line="126" column="50" selection-start-line="126" selection-start-column="25" selection-end-line="126" selection-end-column="50" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -160,14 +159,14 @@
         <option value="$PROJECT_DIR$/mutual_info/three_variate_mutual_info.py" />
         <option value="$PROJECT_DIR$/mutual_info/ensemble.py" />
         <option value="$PROJECT_DIR$/mutual_info/colon.py" />
-        <option value="$PROJECT_DIR$/mutual_info/train_MVMI.py" />
         <option value="$PROJECT_DIR$/mutual_info/four_variate_mi.py" />
+        <option value="$PROJECT_DIR$/mutual_info/train_MVMI.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="295" />
-    <option name="y" value="19" />
+    <option name="x" value="82" />
+    <option name="y" value="7" />
     <option name="width" value="1541" />
     <option name="height" value="989" />
   </component>
@@ -352,15 +351,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="295" y="19" width="1541" height="989" extended-state="0" />
+    <frame x="82" y="7" width="1541" height="989" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22421823" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.22421823" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32827103" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.34462616" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.34462616" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -609,8 +608,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mutual_info/four_variate_mi.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1071">
-          <caret line="81" column="14" selection-start-line="81" selection-start-column="13" selection-end-line="81" selection-end-column="14" />
+        <state relative-caret-position="2142">
+          <caret line="126" column="50" selection-start-line="126" selection-start-column="25" selection-end-line="126" selection-end-column="50" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -619,8 +618,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mutual_info/train_MVMI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="22" column="24" selection-start-line="22" selection-start-column="21" selection-end-line="22" selection-end-column="24" />
+        <state relative-caret-position="187">
+          <caret line="23" column="21" selection-start-line="23" selection-start-column="21" selection-end-line="23" selection-end-column="21" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>

@@ -18,10 +18,10 @@ from ensemble import Ensemble
 from colon import Colon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-3
+LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 30000
 BATCH_SIZE_DEFAULT = 256
-EVAL_FREQ_DEFAULT = 200
+EVAL_FREQ_DEFAULT = 100
 
 FLAGS = None
 
