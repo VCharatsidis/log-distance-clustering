@@ -45,14 +45,14 @@ def three_variate_IID_loss(x_1, x_2, x_3, EPS=sys.float_info.epsilon):
   # p_i[(p_i < EPS).data] = EPS
   # p_z[(p_z < EPS).data] = EPS
 
-  # numerator = torch.log(p_i_j) + torch.log(p_i_z) + torch.log(p_j_z)
-  # denominator = torch.log(joint_1_2_3) + torch.log(p_i) + torch.log(p_j) + torch.log(p_z)
+  numerator = torch.log(p_i_j) + torch.log(p_i_z) + torch.log(p_j_z)
+  denominator = torch.log(joint_1_2_3) + torch.log(p_i) + torch.log(p_j) + torch.log(p_z)
 
   # Total correlation
-  numerator = torch.log(joint_1_2_3)
-  denominator = torch.log(p_i) + torch.log(p_j) + torch.log(p_z)
+  # numerator = torch.log(joint_1_2_3)
+  # denominator = torch.log(p_i) + torch.log(p_j) + torch.log(p_z)
 
-  coeff = 1.1
+  coeff = 1.05
   loss = - joint_1_2_3 * (numerator - coeff * denominator)
   loss = loss.sum()
   #loss = torch.abs(loss)
@@ -83,17 +83,4 @@ def joint(x_1, x_2, x_3):
 
   return combine_1_2_3
 
-
-def compute_joint(x_out, x_tf_out):
-  # produces variable that requires grad (since args require grad)
-
-  bn, k = x_out.size()
-  assert (x_tf_out.size(0) == bn and x_tf_out.size(1) == k)
-
-  p_i_j = x_out.unsqueeze(2) * x_tf_out.unsqueeze(1)  # bn, k, k
-  p_i_j = p_i_j.sum(dim=0)  # k, k
-  #p_i_j = (p_i_j + p_i_j.t()) / 2.
-  p_i_j = p_i_j / p_i_j.sum()  # normalise
-
-  return p_i_j
 

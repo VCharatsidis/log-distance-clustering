@@ -20,7 +20,7 @@ from colon import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-3
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 900
+BATCH_SIZE_DEFAULT = 730
 EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
@@ -60,26 +60,36 @@ def kl_divergence(p, q):
     return torch.nn.functional.kl_div(p, q)
 
 
-def encode_4_patches(image, colons):
-    i_1, i_2, i_3, i_4 = split_image_to_4(image)
+def encode_4_patches(image,
+                     colons,
+                     p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p2=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p3=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p4=torch.zeros([BATCH_SIZE_DEFAULT, 10])):
 
-    pred_1 = colons[0](i_1)
-    pred_2 = colons[0](i_2)
-    pred_3 = colons[0](i_3)
-    pred_4 = colons[0](i_4)
+    i_1, i_2, i_3, i_4 = split_image_to_4(image)
+    p1 = p1.to('cuda')
+    p2 = p2.to('cuda')
+    p3 = p3.to('cuda')
+    p4 = p4.to('cuda')
+
+    pred_1 = colons[0](i_1, p2, p3, p4)
+    pred_2 = colons[0](i_2, p1, p3, p4)
+    pred_3 = colons[0](i_3, p1, p2, p4)
+    pred_4 = colons[0](i_4, p1, p2, p3)
 
     return pred_1, pred_2, pred_3, pred_4
 
 
 def encode_3_patches(image, colons):
-    i_1, i_2, i_3 = split_image_to_3(image)
+    # i_1, i_2, i_3 = split_image_to_3(image)
+    #
+    # pred_1 = colons[0](i_1)
+    # pred_2 = colons[0](i_2)
+    # pred_3 = colons[0](i_3)
 
-    pred_1 = colons[0](i_1)
-    pred_2 = colons[0](i_2)
-    pred_3 = colons[0](i_3)
-
-    # image = image.to('cuda')
-    # pred_1, pred_2, pred_3 = colons[0](image)
+    image = image.to('cuda')
+    pred_1, pred_2, pred_3 = colons[0](image)
 
     # print("pred_1 ", pred_1.shape)
     # print("pred_2 ", pred_2.shape)
@@ -88,6 +98,7 @@ def encode_3_patches(image, colons):
     # input()
 
     return pred_1, pred_2, pred_3
+
 
 
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
@@ -154,6 +165,27 @@ def print_params(model):
         print(param.data)
 
 
+def second_guess(X, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4):
+    x_train = X[ids, :]
+
+    x_tensor = to_Tensor(x_train, BATCH_SIZE_DEFAULT)
+
+    images = x_tensor / 255
+
+    # pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
+    # loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
+
+    pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons, p1, p2, p3, p4)
+    loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
+
+    if train:
+        optimizers[0].zero_grad()
+        loss.backward(retain_graph=True)
+        optimizers[0].step()
+
+    return pred_1, pred_2, pred_3, pred_4, loss
+
+
 def train():
     mnist = fetch_openml('mnist_784', version=1, cache=True)
     targets = mnist.target[60000:]
@@ -177,7 +209,8 @@ def train():
     colons_paths.append(predictor_model)
 
     #four_split = 3200
-    two_split = 5120
+    preds = 30
+    two_split = 5120 + preds
 
     #two_split_3_conv = 3840
 
@@ -199,10 +232,31 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        p1 = p1.to('cuda')
+        p2 = p2.to('cuda')
+        p3 = p3.to('cuda')
+        p4 = p4.to('cuda')
+        p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        p1 = p1.to('cuda')
+        p2 = p2.to('cuda')
+        p3 = p3.to('cuda')
+        p4 = p4.to('cuda')
+        p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            p1 = p1.to('cuda')
+            p2 = p2.to('cuda')
+            p3 = p3.to('cuda')
+            p4 = p4.to('cuda')
+            p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            p1 = p1.to('cuda')
+            p2 = p2.to('cuda')
+            p3 = p3.to('cuda')
+            p4 = p4.to('cuda')
+            p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+
             print()
             print("iteration: ", iteration)
 
@@ -214,10 +268,10 @@ def train():
                 val, index = torch.max(p1[i], 0)
                 val, index2 = torch.max(p2[i], 0)
                 val, index3 = torch.max(p3[i], 0)
-                val, index4 = torch.max(p4[i], 0)
+                #val, index4 = torch.max(p4[i], 0)
 
                 string = str(index.data.cpu().numpy())+" "+ str(index2.data.cpu().numpy()) + " "+\
-                         str(index3.data.cpu().numpy())+" "+ str(index4.data.cpu().numpy()) +" , "
+                         str(index3.data.cpu().numpy())+" , "#+ str(index4.data.cpu().numpy()) +" , "
 
                 print_dict[targets[test_ids[i]]] += string
 
