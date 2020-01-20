@@ -42,15 +42,17 @@ class Colon(nn.Module):
         )
 
         self.linear = nn.Sequential(
-            nn.Linear(n_inputs, 300),
+            nn.Dropout(),
+            nn.Linear(n_inputs, 500),
             nn.Tanh(),
 
-            nn.Linear(300, 10)
+            nn.Dropout(),
+            nn.Linear(500, 10)
         )
 
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x, p1, p2, p3):
+    def forward(self, x):
         """
         Performs forward pass of the input. Here an input tensor x is transformed through
         several layer transformations.
@@ -63,9 +65,7 @@ class Colon(nn.Module):
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
 
-        linear_input = torch.cat([conv, p1, p2, p3], 1)
-
-        logits = self.linear(linear_input)
+        logits = self.linear(conv)
         out = self.softmax(logits)
 
         return out
