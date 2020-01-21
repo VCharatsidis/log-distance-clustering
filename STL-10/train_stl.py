@@ -11,6 +11,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from stl10_input import read_all_images, read_labels
 from encoderSTL import EncoderSTL
+import random
 
 from sklearn.datasets import fetch_openml
 from four_variate_mi import four_variate_IID_loss
@@ -21,10 +22,10 @@ from utils import rotate, scale, random_erease
 from colon_mvmi import Colon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-5
+LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
 BATCH_SIZE_DEFAULT = 60
-EVAL_FREQ_DEFAULT = 400
+EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
 
@@ -57,35 +58,19 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     x_tensor = to_tensor(x_train, to_tensor_size)
 
-    images = x_tensor/255
-
-    # pred_1, pred_2, pred_3 = encode_3_patches(images, colons)
-    # loss = three_variate_IID_loss(pred_1, pred_2, pred_3)
-
-    # pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
+    images = x_tensor/255.0
 
     pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
 
     product = pred_1 * pred_2 * pred_3 * pred_4
-    product_sum = product.sum(dim=0)
+    log = torch.log(product)
+    log_sum = log.sum(dim=1)
 
-    log = torch.log(product_sum)
-    loss = - log.sum()
-
-    # loss_1 = IID_loss(pred_1, pred_2)
-    # loss_2 = IID_loss(pred_3, pred_4)
-
-    # loss_3 = IID_loss(pred_1, pred_3)
-    # loss_4 = IID_loss(pred_1, pred_4)
-    #
-    # loss_5 = IID_loss(pred_2, pred_3)
-    # loss_6 = IID_loss(pred_2, pred_4)
-
-    # loss_a = loss_1  #+ loss_3 + loss_4 + loss_5 + loss_6
-    # loss_b = loss_2  #+ loss_3 + loss_4 + loss_5 + loss_6
+    loss = - log_sum.mean(dim=0)
 
     if train:
         torch.autograd.set_detect_anomaly(True)
+
         for i in optimizers:
             i.zero_grad()
 
@@ -159,7 +144,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 26624
+    input = 13312
     #input = 3840
 
     # c = Ensemble()
@@ -208,7 +193,12 @@ def train():
             print()
             print("iteration: ", iteration)
 
-            print_info(p1, p2, p3, p4, 150, targets, test_ids)
+            print(p1[0])
+            print(p2[0])
+            print(p3[0])
+            print(p4[0])
+
+            print_info(p1, p2, p3, p4, targets, test_ids)
 
             test_loss = mim.item()
 
@@ -235,9 +225,8 @@ def show_mnist(first_image, w, h):
     plt.show()
 
 
-def print_info(p1, p2, p3, p4, number, targets, test_ids):
-    print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-    print_dict = {0: "", 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
+def print_info(p1, p2, p3, p4, targets, test_ids):
+    print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
     for i in range(p1.shape[0]):
         if i == 10:
             print("")
