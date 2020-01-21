@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch
 
 
-class BigColon(nn.Module):
+class SocialColon(nn.Module):
     """
     This class implements a Multi-layer Perceptron in PyTorch.
     It handles the different layers and parameters of the model.
@@ -25,7 +25,7 @@ class BigColon(nn.Module):
                      This number is required in order to specify the
                      output dimensions of the MLP
         """
-        super(BigColon, self).__init__()
+        super(SocialColon, self).__init__()
 
         self.conv = nn.Sequential(
             nn.Conv2d(n_channels, 64, kernel_size=3, stride=1, padding=1),
@@ -42,7 +42,7 @@ class BigColon(nn.Module):
         )
 
         self.linear = nn.Sequential(
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(n_inputs, 1000),
             nn.Tanh(),
 
@@ -52,7 +52,7 @@ class BigColon(nn.Module):
 
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x):
+    def forward(self, x, p1, p2, p3):
         """
         Performs forward pass of the input. Here an input tensor x is transformed through
         several layer transformations.
@@ -65,7 +65,9 @@ class BigColon(nn.Module):
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
 
-        logits = self.linear(conv)
+        linear_input = torch.cat([conv, p1, p2, p3], 1)
+
+        logits = self.linear(linear_input)
         out = self.softmax(logits)
 
         return out

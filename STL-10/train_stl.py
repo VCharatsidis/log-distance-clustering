@@ -9,6 +9,7 @@ import torch
 
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
+from stl10_input import read_all_images, read_labels
 
 from sklearn.datasets import fetch_openml
 from four_variate_mi import four_variate_IID_loss
@@ -21,7 +22,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 200
+BATCH_SIZE_DEFAULT = 70
 EVAL_FREQ_DEFAULT = 400
 
 FLAGS = None
@@ -64,7 +65,9 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
 
-    loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
+    product = (pred_1 * pred_2 * pred_3 * pred_4).sum(dim=0)
+
+    loss = - torch.log(product).sum()
 
     # loss_1 = IID_loss(pred_1, pred_2)
     # loss_2 = IID_loss(pred_3, pred_4)
@@ -92,22 +95,19 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
 
 def split_image_to_4(image):
-    # split_at_pixel = 19
-    # width = image.shape[2]
-    # height = image.shape[3]
-    #
-    # image_1 = image[:, :, 0: split_at_pixel, :]
-    # image_2 = image[:, :, width - split_at_pixel:, :]
-    # image_3 = image[:, :, :, 0: split_at_pixel]
-    # image_4 = image[:, :, :, height - split_at_pixel:]
+    split_at_pixel = 50
+    width = image.shape[2]
+    height = image.shape[3]
 
-    # # image_1, _ = torch.split(image, split_at_pixel, dim=3)
-    # # image_3, _ = torch.split(image, split_at_pixel, dim=2)
-    #
-    image_1 = image
-    image_2 = rotate(image, 20, BATCH_SIZE_DEFAULT)
-    image_3 = scale(image, BATCH_SIZE_DEFAULT)
-    image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
+    image_1 = image[:, :, 0: split_at_pixel, :]
+    image_2 = image[:, :, width - split_at_pixel:, :]
+    image_3 = image[:, :, :, 0: split_at_pixel]
+    image_4 = image[:, :, :, height - split_at_pixel:]
+
+    # image_1 = image
+    # image_2 = rotate(image, 20, BATCH_SIZE_DEFAULT)
+    # image_3 = scale(image, BATCH_SIZE_DEFAULT)
+    # image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
 
     image_1 = image_1.to('cuda')
     image_2 = image_2.to('cuda')
@@ -115,16 +115,7 @@ def split_image_to_4(image):
     image_4 = image_4.to('cuda')
 
     #image = image.to('cuda')
-    # show_mnist(image_1[0], 20, 28)
-    # show_mnist(image_1[1], 20, 28)
-    # show_mnist(image_1[2], 20, 28)
-    # show_mnist(image_1[3], 20, 28)
-    #
-    # show_mnist(image_2[0], 20, 28)
-    # show_mnist(image_2[1], 20, 28)
-    # show_mnist(image_2[2], 20, 28)
-    # show_mnist(image_2[3], 20, 28)
-    #
+
     # input()
     # print(image_1.shape)
     # print(image_2.shape)
@@ -141,15 +132,18 @@ def print_params(model):
 
 
 def train():
-    mnist = fetch_openml('mnist_784', version=1, cache=True)
-    targets = mnist.target[60000:]
 
-    X_train = mnist.data[:60000]
-    X_test = mnist.data[60000:]
+    fileName = "data\\train_X.bin"
+    X_train = read_all_images(fileName)
 
-    print(X_test.shape)
+    testFile = "data\\test_X.bin"
+    X_test = read_all_images(testFile)
 
-    number_colons = 4
+    # train_y_File = "data\\train_y.bin"
+    # train_y = read_labels(train_y_File)
+
+    test_y_File = "data\\test_y.bin"
+    targets = read_labels(test_y_File)
 
     script_directory = os.path.split(os.path.abspath(__file__))[0]
 
@@ -158,17 +152,17 @@ def train():
     optimizers = []
     colons_paths = []
 
-    filepath = 'smart_colons\\colon_' + str(0) + '.model'
+    filepath = 'encoders\\encoder_' + str(0) + '.model'
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 8192
+    input = 44800
     #input = 3840
 
     # c = Ensemble()
     # c.cuda()
 
-    c = Colon(1, input)
+    c = Colon(3, input)
     c.cuda()
     colons.append(c)
 
@@ -226,13 +220,13 @@ def train():
 
 
 def to_tensor(X, batch_size=BATCH_SIZE_DEFAULT):
-    X = np.reshape(X, (batch_size, 1, 28, 28))
+    #X = np.reshape(X, (batch_size, 1, 96, 96))
     X = Variable(torch.FloatTensor(X))
 
     return X
 
 
-def show_mnist(first_image, w ,h):
+def show_mnist(first_image, w, h):
     pixels = first_image.reshape((w, h))
     plt.imshow(pixels, cmap='gray')
     plt.show()
@@ -240,7 +234,8 @@ def show_mnist(first_image, w ,h):
 
 def print_info(p1, p2, p3, p4, number, targets, test_ids):
     print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-    for i in range(number):
+    print_dict = {0: "", 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
+    for i in range(p1.shape[0]):
         if i == 10:
             print("")
 

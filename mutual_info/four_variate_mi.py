@@ -26,6 +26,17 @@ def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   return loss
 
 
+def diagonal(predictions):
+
+    sum = predictions[0]
+    print(predictions[0].shape)
+    for i in range(len(predictions)-1):
+        sum = torch.mul(sum, predictions[i+1])
+
+    print(sum.shape)
+    print(sum[0])
+    return sum
+
 def six_variate_IID_loss(x_1, x_2, x_3, x_4, x_5, x_6, EPS=sys.float_info.epsilon):
   k = 10  # had softmax applied
 
@@ -57,7 +68,7 @@ def my_loss_8(joint_probability_1_2_3_4):
     return sum
 
 def my_loss(joint_probability_1_2_3_4):
-    p_1, p_2, p_3, p_4 = one_variate_marginals(joint_probability_1_2_3_4)
+    #p_1, p_2, p_3, p_4 = one_variate_marginals(joint_probability_1_2_3_4)
 
     classes = 10
     class_weight = 1/classes
@@ -79,9 +90,9 @@ def my_loss(joint_probability_1_2_3_4):
         # print("d", d)
         # print()
 
-        sum += torch.abs(torch.log(joint_prob /class_weight))
+        #sum += torch.abs(torch.log(joint_prob /class_weight))
 
-        #sum += - torch.log(joint_prob)
+        sum += - torch.log(joint_prob)
 
     return sum
 

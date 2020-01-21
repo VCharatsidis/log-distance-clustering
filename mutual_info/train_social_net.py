@@ -14,14 +14,15 @@ from sklearn.datasets import fetch_openml
 from three_variate_mutual_info import three_variate_IID_loss
 from four_variate_mi import four_variate_IID_loss
 from ensemble import Ensemble
+from utils import scale, rotate, random_erease
 
-from colon import Colon
+from SocialColon import SocialColon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 5e-3
+LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 1224
-EVAL_FREQ_DEFAULT = 5
+BATCH_SIZE_DEFAULT = 100
+EVAL_FREQ_DEFAULT = 100
 
 FLAGS = None
 
@@ -34,32 +35,6 @@ def multi_filter_flatten(out):
     return out.view(out.shape[0], out.shape[1], -1)
 
 
-def neighbours(convolutions, perimeter=3):
-    size = convolutions.shape[0]
-    inputs = []
-    reception_field = 2 * perimeter + 1
-    step = 3
-
-    for i in range(3, size-3, step):
-        for j in range(3, size-3, step):
-            conv_loss_tensor = torch.zeros(reception_field, reception_field)
-
-            for row in range(i-perimeter, i+perimeter+1):
-                for col in range(j-perimeter, j+perimeter+1):
-                    if row >= 0 and row < size:
-                        if col >= 0 and col < size:
-                            conv_loss_tensor[row - (i-perimeter), col - (j-perimeter)] = convolutions[row, col]
-
-            flatten_input = torch.flatten(conv_loss_tensor)
-            inputs.append(flatten_input)
-
-    return inputs
-
-
-def kl_divergence(p, q):
-    return torch.nn.functional.kl_div(p, q)
-
-
 def encode_4_patches(image,
                      colons,
                      p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
@@ -68,10 +43,11 @@ def encode_4_patches(image,
                      p4=torch.zeros([BATCH_SIZE_DEFAULT, 10])):
 
     i_1, i_2, i_3, i_4 = split_image_to_4(image)
-    # p1 = p1.to('cuda')
-    # p2 = p2.to('cuda')
-    # p3 = p3.to('cuda')
-    # p4 = p4.to('cuda')
+
+    p1 = p1.to('cuda')
+    p2 = p2.to('cuda')
+    p3 = p3.to('cuda')
+    p4 = p4.to('cuda')
 
     pred_1 = colons[0](i_1, p2, p3, p4)
     pred_2 = colons[0](i_2, p1, p3, p4)
@@ -79,25 +55,6 @@ def encode_4_patches(image,
     pred_4 = colons[0](i_4, p1, p2, p3)
 
     return pred_1, pred_2, pred_3, pred_4
-
-
-def encode_3_patches(image, colons):
-    # i_1, i_2, i_3 = split_image_to_3(image)
-    #
-    # pred_1 = colons[0](i_1)
-    # pred_2 = colons[0](i_2)
-    # pred_3 = colons[0](i_3)
-
-    image = image.to('cuda')
-    pred_1, pred_2, pred_3 = colons[0](image)
-
-    # print("pred_1 ", pred_1.shape)
-    # print("pred_2 ", pred_2.shape)
-    # print("pred_3 ", pred_3.shape)
-    # print(pred_1[0])
-    # input()
-
-    return pred_1, pred_2, pred_3
 
 
 
@@ -143,21 +100,34 @@ def split_image_to_3(images):
     return image_a, image_b, image_4
 
 def split_image_to_4(image):
-    image_shape = image.shape
+    image_1 = image
+    image_2 = rotate(image, 20, BATCH_SIZE_DEFAULT)
+    image_3 = scale(image, BATCH_SIZE_DEFAULT)
+    image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
 
-    #image_a, image_b = torch.split(image, image_shape[2]//2, dim=2)
+    image_1 = image_1.to('cuda')
+    image_2 = image_2.to('cuda')
+    image_3 = image_3.to('cuda')
+    image_4 = image_4.to('cuda')
 
-    image_1, image_2 = torch.split(image, image_shape[2]//2, dim=2)
-    image_3, image_4 = torch.split(image, image_shape[2]//2, dim=3)
-
-    # image_1 = image_1.to('cuda')
-    # image_2 = image_2.to('cuda')
-    # image_3 = image_3.to('cuda')
-    # image_4 = image_4.to('cuda')
+    # image = image.to('cuda')
+    # show_mnist(image_1[0], 20, 28)
+    # show_mnist(image_1[1], 20, 28)
+    # show_mnist(image_1[2], 20, 28)
+    # show_mnist(image_1[3], 20, 28)
+    #
+    # show_mnist(image_2[0], 20, 28)
+    # show_mnist(image_2[1], 20, 28)
+    # show_mnist(image_2[2], 20, 28)
+    # show_mnist(image_2[3], 20, 28)
+    #
+    # input()
     # print(image_1.shape)
     # print(image_2.shape)
     # print(image_3.shape)
     # print(image_4.shape)
+    # input()
+
     return image_1, image_2, image_3, image_4
 
 def print_params(model):
@@ -210,15 +180,15 @@ def train():
 
     #four_split = 3200
     preds = 30
-    two_split = 5120 + preds
+    two_split = 6400 + preds
 
     #two_split_3_conv = 3840
 
     # c = Ensemble()
     # c.cuda()
 
-    c = Colon(1, two_split)
-    #c.cuda()
+    c = SocialColon(1, two_split)
+    c.cuda()
     colons.append(c)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
@@ -245,7 +215,7 @@ def train():
             print("iteration: ", iteration)
 
             print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-            for i in range(120):
+            for i in range(100):
                 if i == 10:
                     print("")
 

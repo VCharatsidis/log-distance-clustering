@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch
 
 
-class BigColon(nn.Module):
+class EncoderSTL(nn.Module):
     """
     This class implements a Multi-layer Perceptron in PyTorch.
     It handles the different layers and parameters of the model.
@@ -25,7 +25,7 @@ class BigColon(nn.Module):
                      This number is required in order to specify the
                      output dimensions of the MLP
         """
-        super(BigColon, self).__init__()
+        super(EncoderSTL, self).__init__()
 
         self.conv = nn.Sequential(
             nn.Conv2d(n_channels, 64, kernel_size=3, stride=1, padding=1),
@@ -42,7 +42,6 @@ class BigColon(nn.Module):
         )
 
         self.linear = nn.Sequential(
-            nn.Dropout(0.5),
             nn.Linear(n_inputs, 1000),
             nn.Tanh(),
 
