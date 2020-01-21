@@ -10,6 +10,7 @@ import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from stl10_input import read_all_images, read_labels
+from encoderSTL import EncoderSTL
 
 from sklearn.datasets import fetch_openml
 from four_variate_mi import four_variate_IID_loss
@@ -20,9 +21,9 @@ from utils import rotate, scale, random_erease
 from colon_mvmi import Colon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-4
+LEARNING_RATE_DEFAULT = 1e-5
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 70
+BATCH_SIZE_DEFAULT = 60
 EVAL_FREQ_DEFAULT = 400
 
 FLAGS = None
@@ -65,9 +66,11 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
 
-    product = (pred_1 * pred_2 * pred_3 * pred_4).sum(dim=0)
+    product = pred_1 * pred_2 * pred_3 * pred_4
+    product_sum = product.sum(dim=0)
 
-    loss = - torch.log(product).sum()
+    log = torch.log(product_sum)
+    loss = - log.sum()
 
     # loss_1 = IID_loss(pred_1, pred_2)
     # loss_2 = IID_loss(pred_3, pred_4)
@@ -156,13 +159,13 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 44800
+    input = 26624
     #input = 3840
 
     # c = Ensemble()
     # c.cuda()
 
-    c = Colon(3, input)
+    c = EncoderSTL(3, input)
     c.cuda()
     colons.append(c)
 
