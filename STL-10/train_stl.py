@@ -24,7 +24,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 45
+BATCH_SIZE_DEFAULT = 700
 EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
@@ -43,7 +43,6 @@ def kl_divergence(p, q):
 
 
 def encode_4_patches(image, colons):
-    split_at_pixel = 50
     #split_at_pixel = 19
 
     # image = np.reshape(image, (BATCH_SIZE_DEFAULT, 1, 28, 28))
@@ -55,6 +54,8 @@ def encode_4_patches(image, colons):
     # input()
     width = image.shape[2]
     height = image.shape[3]
+
+    split_at_pixel = (width-1) // 2
 
     image_1 = image[:, :, 0: split_at_pixel, :]
     image_2 = image[:, :, width - split_at_pixel:, :]
@@ -70,9 +71,11 @@ def encode_4_patches(image, colons):
     prod = torch.ones([BATCH_SIZE_DEFAULT, 10])
 
     preds = []
-    for i in images:
+
+    for idx, i in enumerate(images):
         z = i.to('cuda')
-        pred = colons[0](z)
+        c_picked = random.randint(0, 3)
+        pred = colons[c_picked](z)
 
         preds.append(pred)
         prod *= pred.to('cpu')
@@ -157,7 +160,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 4480
+    input = 10400
     #input = 1152
 
     # c = Ensemble()
@@ -167,29 +170,29 @@ def train():
     c.cuda()
     colons.append(c)
 
-    # c2 = Colon(1, input)
-    # c2.cuda()
-    # colons.append(c2)
-    #
-    # c3 = Colon(1, input)
-    # c3.cuda()
-    # colons.append(c3)
-    #
-    # c4 = Colon(1, input)
-    # c4.cuda()
-    # colons.append(c4)
+    c2 = EncoderSTL(3, input)
+    c2.cuda()
+    colons.append(c2)
+
+    c3 = EncoderSTL(3, input)
+    c3.cuda()
+    colons.append(c3)
+
+    c4 = EncoderSTL(3, input)
+    c4.cuda()
+    colons.append(c4)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
     optimizers.append(optimizer)
 
-    # optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer2)
-    #
-    # optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer3)
-    #
-    # optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer4)
+    optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer2)
+
+    optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer3)
+
+    optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer4)
 
     max_loss = 1999
 

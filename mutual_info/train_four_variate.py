@@ -17,6 +17,8 @@ from four_variate_mi import four_variate_IID_loss
 from mutual_info import IID_loss
 from utils import rotate, scale, random_erease
 from colon_mvmi import Colon
+from vae_dec import VaeDecoder
+from vae_encoder import VaeEncoder
 
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
@@ -39,18 +41,18 @@ def kl_divergence(p, q):
     return torch.nn.functional.kl_div(p, q)
 
 
-def encode_4_patches(image, colons):
-    i_1, i_2, i_3, i_4 = split_image_to_4(image)
+def encode_4_patches(image, colons, vae_enc, vae_dec):
+    i_1, i_2, i_3, i_4 = split_image_to_4(image, vae_enc, vae_dec)
 
     pred_1 = colons[0](i_1)
-    pred_2 = colons[0](i_2)
-    pred_3 = colons[0](i_3)
-    pred_4 = colons[0](i_4)
+    pred_2 = colons[1](i_2)
+    pred_3 = colons[2](i_3)
+    pred_4 = colons[3](i_4)
 
-    return pred_1, pred_2, pred_3, pred_4
+    return pred_1, pred_2, pred_3, pred_4, i_4
 
 
-def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
+def forward_block(X, ids, colons, optimizers, train, to_tensor_size, vae_enc, vae_dec):
     x_train = X[ids, :]
 
     x_tensor = to_tensor(x_train, to_tensor_size)
@@ -62,7 +64,7 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     # pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
 
-    pred_1, pred_2, pred_3, pred_4 = encode_4_patches(images, colons)
+    pred_1, pred_2, pred_3, pred_4, i_4 = encode_4_patches(images, colons, vae_enc, vae_dec)
 
     loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
 
@@ -88,10 +90,10 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
         for i in optimizers:
             i.step()
 
-    return pred_1, pred_2, pred_3, pred_4, loss
+    return pred_1, pred_2, pred_3, pred_4, loss, i_4
 
 
-def split_image_to_4(image):
+def split_image_to_4(image, vae_enc, vae_dec):
     # split_at_pixel = 19
     # width = image.shape[2]
     # height = image.shape[3]
@@ -107,7 +109,15 @@ def split_image_to_4(image):
     image_1 = image
     image_2 = rotate(image, 20, BATCH_SIZE_DEFAULT)
     image_3 = scale(image, BATCH_SIZE_DEFAULT)
-    image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
+    #image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
+
+    vae_in = torch.reshape(image, (BATCH_SIZE_DEFAULT, 784))
+
+    sec_mean, sec_std = vae_enc(vae_in)
+    e = torch.zeros(sec_mean.shape).normal_()
+    sec_z = sec_std * e + sec_mean
+    image_4 = vae_dec(sec_z)
+    image_4 = torch.reshape(image_4, (BATCH_SIZE_DEFAULT, 1, 28, 28))
 
     image_1 = image_1.to('cuda')
     image_2 = image_2.to('cuda')
@@ -172,29 +182,39 @@ def train():
     c.cuda()
     colons.append(c)
 
-    # c2 = Colon(1, input)
-    # c2.cuda()
-    # colons.append(c2)
-    #
-    # c3 = Colon(1, input)
-    # c3.cuda()
-    # colons.append(c3)
-    #
-    # c4 = Colon(1, input)
-    # c4.cuda()
-    # colons.append(c4)
+    vae_enc = VaeEncoder()
+    vae_dec = VaeDecoder()
+
+
+    c2 = Colon(1, input)
+    c2.cuda()
+    colons.append(c2)
+
+    c3 = Colon(1, input)
+    c3.cuda()
+    colons.append(c3)
+
+    c4 = Colon(1, input)
+    c4.cuda()
+    colons.append(c4)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
     optimizers.append(optimizer)
 
-    # optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer2)
-    #
-    # optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer3)
-    #
-    # optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
-    # optimizers.append(optimizer4)
+    optimizer_enc = torch.optim.Adam(vae_enc.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer_enc)
+
+    optimizer_dec = torch.optim.Adam(vae_dec.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer_dec)
+
+    optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer2)
+
+    optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer3)
+
+    optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer4)
 
     max_loss = 1999
 
@@ -203,11 +223,45 @@ def train():
         ids = np.random.choice(len(X_train), size=BATCH_SIZE_DEFAULT, replace=False)
 
         train = True
-        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        p1, p2, p3, p4, mim, i_4 = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, vae_enc, vae_dec)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
-            p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            p1, p2, p3, p4, mim, i_4 = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, vae_enc, vae_dec)
+            if iteration > 600:
+                print(targets[test_ids[0]])
+                show_mnist(i_4[0].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[1]])
+                show_mnist(i_4[1].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[2]])
+                show_mnist(i_4[2].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[3]])
+                show_mnist(i_4[3].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[4]])
+                show_mnist(i_4[4].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[5]])
+                show_mnist(i_4[5].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[6]])
+                show_mnist(i_4[6].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[7]])
+                show_mnist(i_4[7].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[8]])
+                show_mnist(i_4[8].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[9]])
+                show_mnist(i_4[9].cpu().detach().numpy(), 28, 28)
+
+                print(targets[test_ids[10]])
+                show_mnist(i_4[10].cpu().detach().numpy(), 28, 28)
+
             print()
             print("iteration: ", iteration)
 
