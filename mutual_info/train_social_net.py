@@ -21,7 +21,7 @@ from SocialColon import SocialColon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 30000
-BATCH_SIZE_DEFAULT = 100
+BATCH_SIZE_DEFAULT = 120
 EVAL_FREQ_DEFAULT = 100
 
 FLAGS = None
@@ -50,9 +50,9 @@ def encode_4_patches(image,
     p4 = p4.to('cuda')
 
     pred_1 = colons[0](i_1, p2, p3, p4)
-    pred_2 = colons[0](i_2, p1, p3, p4)
-    pred_3 = colons[0](i_3, p1, p2, p4)
-    pred_4 = colons[0](i_4, p1, p2, p3)
+    pred_2 = colons[1](i_2, p1, p3, p4)
+    pred_3 = colons[2](i_3, p1, p2, p4)
+    pred_4 = colons[3](i_4, p1, p2, p3)
 
     return pred_1, pred_2, pred_3, pred_4
 
@@ -72,9 +72,13 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
     loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
 
     if train:
-        optimizers[0].zero_grad()
+        for i in optimizers:
+            i.zero_grad()
+
         loss.backward(retain_graph=True)
-        optimizers[0].step()
+
+        for i in optimizers:
+            i.step()
 
     return pred_1, pred_2, pred_3, pred_4, loss
 
@@ -149,9 +153,13 @@ def second_guess(X, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, 
     loss = four_variate_IID_loss(pred_1, pred_2, pred_3, pred_4)
 
     if train:
-        optimizers[0].zero_grad()
+        for i in optimizers:
+            i.zero_grad()
+
         loss.backward(retain_graph=True)
-        optimizers[0].step()
+
+        for i in optimizers:
+            i.step()
 
     return pred_1, pred_2, pred_3, pred_4, loss
 
@@ -191,8 +199,29 @@ def train():
     c.cuda()
     colons.append(c)
 
+    c2 = SocialColon(1, two_split)
+    c2.cuda()
+    colons.append(c2)
+
+    c3 = SocialColon(1, two_split)
+    c3.cuda()
+    colons.append(c3)
+
+    c4 = SocialColon(1, two_split)
+    c4.cuda()
+    colons.append(c4)
+
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
     optimizers.append(optimizer)
+
+    optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer2)
+
+    optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer3)
+
+    optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
+    optimizers.append(optimizer4)
 
     max_loss = 1999
 
@@ -215,7 +244,7 @@ def train():
             print("iteration: ", iteration)
 
             print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-            for i in range(100):
+            for i in range(p1.shape[0]):
                 if i == 10:
                     print("")
 
