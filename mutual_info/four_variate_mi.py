@@ -6,22 +6,28 @@ import random
 def four_variate_IID_loss(x_1, x_2, x_3, x_4, EPS=sys.float_info.epsilon):
   k = 10  # had softmax applied
 
-  joint_probability_1_2_3_4 = joint_probability(x_1, x_2, x_3, x_4)
+  # joint_probability_1_2_3_4 = joint_probability(x_1, x_2, x_3, x_4)
+  #
+  # # assert (joint_probability_1_2_3_4.size() == (k, k, k, k, k, k))
+  #
+  # diagonal_elements_loss = my_loss(joint_probability_1_2_3_4)
+  #
+  # # if random.uniform(0, 1) > 0.995:
+  # #     mvmi = multi_variate_mutual_info(joint_probability_1_2_3_4)
+  # #     total_corr = total_correlation(joint_probability_1_2_3_4)
+  # #     print("mvmi ", mvmi)
+  # #     print("total corr, ", total_corr)
+  # #     print("diag loss", diagonal_elements_loss)
+  #
+  # loss = diagonal_elements_loss #- mvmi
+  #
+  # loss = loss.mean()
 
-  # assert (joint_probability_1_2_3_4.size() == (k, k, k, k, k, k))
+  product = x_1 * x_2 * x_3 * x_4
+  product = product.mean(dim=0)
+  log_product = torch.log(product)
+  loss = - log_product.mean(dim=0)
 
-  diagonal_elements_loss = my_loss(joint_probability_1_2_3_4)
-
-  # if random.uniform(0, 1) > 0.995:
-  #     mvmi = multi_variate_mutual_info(joint_probability_1_2_3_4)
-  #     total_corr = total_correlation(joint_probability_1_2_3_4)
-  #     print("mvmi ", mvmi)
-  #     print("total corr, ", total_corr)
-  #     print("diag loss", diagonal_elements_loss)
-
-  loss = diagonal_elements_loss #- mvmi
-
-  loss = loss.sum()
 
   return loss
 

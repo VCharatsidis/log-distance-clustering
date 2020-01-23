@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4e4b8429-d841-4547-bff1-3c027a96a34a" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/STL-10/encoderSTL.py" beforeDir="false" afterPath="$PROJECT_DIR$/STL-10/encoderSTL.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/STL-10/train_stl.py" beforeDir="false" afterPath="$PROJECT_DIR$/STL-10/train_stl.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mutual_info/train_social_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/train_social_net.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mutual_info/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -12,11 +16,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="246" column="4" selection-start-line="246" selection-start-column="4" selection-end-line="246" selection-end-column="4" />
+            <state relative-caret-position="352">
+              <caret line="235" column="12" selection-start-line="235" selection-start-column="12" selection-end-line="235" selection-end-column="12" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -36,11 +40,23 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-34">
+              <caret line="34" column="42" lean-forward="true" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
+              <folding>
+                <element signature="e#0#38#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/train_social_net.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-498">
-              <caret line="37" column="4" selection-start-line="37" selection-start-column="4" selection-end-line="37" selection-end-column="4" />
+            <state relative-caret-position="250">
+              <caret line="110" lean-forward="true" selection-start-line="110" selection-end-line="110" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -51,7 +67,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-625">
+            <state relative-caret-position="-642">
+              <caret line="15" selection-start-line="15" selection-end-line="15" />
               <folding>
                 <element signature="e#0#34#0" expanded="true" />
               </folding>
@@ -60,9 +77,30 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mutual_info/RandomErase.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="173">
+              <caret line="23" column="8" selection-start-line="23" selection-start-column="8" selection-end-line="23" selection-end-column="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/STL-10/stl10_input.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-459">
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/SocialColon.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-829">
+            <state relative-caret-position="242">
+              <caret line="42" lean-forward="true" selection-start-line="42" selection-end-line="42" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -73,8 +111,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/four_variate_mi.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="12">
-              <caret line="69" column="4" selection-start-line="69" selection-start-column="4" selection-end-line="69" selection-end-column="4" />
+            <state relative-caret-position="255">
+              <caret line="27" column="34" lean-forward="true" selection-start-line="27" selection-start-column="3" selection-end-line="27" selection-end-column="34" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -87,36 +125,6 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="173">
               <caret line="492" selection-start-line="492" selection-end-line="492" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mutual_info/vae_encoder.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="5" column="8" selection-start-line="5" selection-start-column="8" selection-end-line="5" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mutual_info/vae_dec.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="5" column="8" selection-start-line="5" selection-start-column="8" selection-end-line="5" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mutual_info/vae_unit.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="242">
-              <caret line="43" column="38" lean-forward="true" selection-start-line="43" selection-start-column="38" selection-end-line="43" selection-end-column="38" />
-              <folding>
-                <element signature="e#1#13#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -161,25 +169,25 @@
         <option value="$PROJECT_DIR$/mutual_info/colon.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_six_variate_mi.py" />
         <option value="$PROJECT_DIR$/mutual_info/RandomErase.py" />
-        <option value="$PROJECT_DIR$/mutual_info/utils.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_MVMI.py" />
         <option value="$PROJECT_DIR$/mutual_info/smart_colon.py" />
         <option value="$PROJECT_DIR$/mutual_info/SocialColon.py" />
-        <option value="$PROJECT_DIR$/mutual_info/four_variate_mi.py" />
         <option value="$PROJECT_DIR$/many/encoder.py" />
         <option value="$PROJECT_DIR$/STL-10/encoder.py" />
         <option value="$PROJECT_DIR$/STL-10/stl10_input.py" />
-        <option value="$PROJECT_DIR$/STL-10/encoderSTL.py" />
-        <option value="$PROJECT_DIR$/STL-10/train_stl.py" />
         <option value="$PROJECT_DIR$/mutual_info/vae_encoder.py" />
         <option value="$PROJECT_DIR$/mutual_info/vae_unit.py" />
         <option value="$PROJECT_DIR$/mutual_info/vae_dec.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_four_variate.py" />
+        <option value="$PROJECT_DIR$/mutual_info/four_variate_mi.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_social_net.py" />
+        <option value="$PROJECT_DIR$/STL-10/encoderSTL.py" />
+        <option value="$PROJECT_DIR$/mutual_info/utils.py" />
+        <option value="$PROJECT_DIR$/STL-10/train_stl.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="465" />
     <option name="y" value="30" />
     <option name="width" value="1408" />
@@ -247,7 +255,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.train_social_net">
+  <component name="RunManager" selected="Python.train_stl">
     <configuration name="stl10_input" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="log_distance_clustering" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -355,9 +363,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.train_stl" />
         <item itemvalue="Python.train_social_net" />
         <item itemvalue="Python.train_four_variate" />
-        <item itemvalue="Python.train_stl" />
         <item itemvalue="Python.stl10_input" />
         <item itemvalue="Python.train_MVMI" />
       </list>
@@ -400,12 +408,6 @@
     </layout>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/STL-10/img/1/1117.png">
-      <provider selected="true" editor-type-id="images" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/STL-10/img/1/1170.png">
-      <provider selected="true" editor-type-id="images" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/STL-10/img/1/1237.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
@@ -511,16 +513,6 @@
     <entry file="file://$PROJECT_DIR$/STL-10/img/8/167.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="97">
-          <caret line="31" column="36" selection-start-line="31" selection-start-column="36" selection-end-line="31" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#38#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/vae/encoder.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
@@ -583,20 +575,56 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/mutual_info/SocialColon.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="242">
+          <caret line="42" lean-forward="true" selection-start-line="42" selection-end-line="42" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/mutual_info/four_variate_mi.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="12">
-          <caret line="69" column="4" selection-start-line="69" selection-start-column="4" selection-end-line="69" selection-end-column="4" />
+        <state relative-caret-position="255">
+          <caret line="27" column="34" lean-forward="true" selection-start-line="27" selection-start-column="3" selection-end-line="27" selection-end-column="34" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
+    <entry file="file://$PROJECT_DIR$/mutual_info/train_social_net.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="246" column="4" selection-start-line="246" selection-start-column="4" selection-end-line="246" selection-end-column="4" />
+        <state relative-caret-position="250">
+          <caret line="110" lean-forward="true" selection-start-line="110" selection-end-line="110" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/STL-10/stl10_input.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-459">
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mutual_info/RandomErase.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="173">
+          <caret line="23" column="8" selection-start-line="23" selection-start-column="8" selection-end-line="23" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-34">
+          <caret line="34" column="42" lean-forward="true" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>
@@ -605,26 +633,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mutual_info/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-625">
+        <state relative-caret-position="-642">
+          <caret line="15" selection-start-line="15" selection-end-line="15" />
           <folding>
             <element signature="e#0#34#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mutual_info/SocialColon.py">
+    <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-829">
-          <folding>
-            <element signature="e#0#38#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mutual_info/train_social_net.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-498">
-          <caret line="37" column="4" selection-start-line="37" selection-start-column="4" selection-end-line="37" selection-end-column="4" />
+        <state relative-caret-position="352">
+          <caret line="235" column="12" selection-start-line="235" selection-start-column="12" selection-end-line="235" selection-end-column="12" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>

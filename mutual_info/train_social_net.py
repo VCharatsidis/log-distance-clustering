@@ -22,7 +22,7 @@ from SocialColon import SocialColon
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 30000
 BATCH_SIZE_DEFAULT = 120
-EVAL_FREQ_DEFAULT = 100
+EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
 
@@ -50,9 +50,9 @@ def encode_4_patches(image,
     p4 = p4.to('cuda')
 
     pred_1 = colons[0](i_1, p2, p3, p4)
-    pred_2 = colons[1](i_2, p1, p3, p4)
-    pred_3 = colons[2](i_3, p1, p2, p4)
-    pred_4 = colons[3](i_4, p1, p2, p3)
+    pred_2 = colons[0](i_2, p1, p3, p4)
+    pred_3 = colons[0](i_3, p1, p2, p4)
+    pred_4 = colons[0](i_4, p1, p2, p3)
 
     return pred_1, pred_2, pred_3, pred_4
 
@@ -231,14 +231,14 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-        p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        # p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        # p1, p2, p3, p4, mim = second_guess(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
-            p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-            p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            # p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            # p1, p2, p3, p4, mim = second_guess(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
             print()
             print("iteration: ", iteration)

@@ -24,7 +24,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 700
+BATCH_SIZE_DEFAULT = 100
 EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
@@ -42,7 +42,13 @@ def kl_divergence(p, q):
     return torch.nn.functional.kl_div(p, q)
 
 
-def encode_4_patches(image, colons):
+def encode_4_patches(image, colons,
+                     p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p2=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p3=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p4=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     ):
+
     #split_at_pixel = 19
 
     # image = np.reshape(image, (BATCH_SIZE_DEFAULT, 1, 28, 28))
@@ -57,16 +63,45 @@ def encode_4_patches(image, colons):
 
     split_at_pixel = (width-1) // 2
 
-    image_1 = image[:, :, 0: split_at_pixel, :]
-    image_2 = image[:, :, width - split_at_pixel:, :]
-    image_3 = image[:, :, :, 0: split_at_pixel]
-    image_4 = image[:, :, :, height - split_at_pixel:]
+    # image_1 = image[:, :, 0: split_at_pixel, :]
+    # image_2 = image[:, :, width - split_at_pixel:, :]
+    # image_3 = image[:, :, :, 0: split_at_pixel]
+    # image_4 = image[:, :, :, height - split_at_pixel:]
+
+    image_1 = image
+    image_2 = rotate(image, 25, BATCH_SIZE_DEFAULT)
+    image_3 = scale(image, 76, 10, BATCH_SIZE_DEFAULT)
+    image_4 = scale(image, 56, 20, BATCH_SIZE_DEFAULT)
+
+    # image_4 = torch.transpose(image_4, 1, 3)
+    # show_mnist(image_4[0], image_4[0].shape[1], image_4[0].shape[2])
+    #
+    # image_2 = torch.transpose(image_2, 1, 3)
+    # show_mnist(image_2[0], image_2[0].shape[1], image_2[0].shape[2])
+    #
+    # image_3 = torch.transpose(image_3, 1, 3)
+    # show_mnist(image_3[0], image_3[0].shape[1], image_3[0].shape[2])
+    #
+    # image_1 = torch.transpose(image_1, 1, 3)
+    # show_mnist(image_1[0], image_1[0].shape[1], image_1[0].shape[2])
+
+    # image_a, image_b = torch.split(image, width//2, dim=2)
+    #
+    # image_1, image_2 = torch.split(image_a, height//2, dim=3)
+    # image_3, image_4 = torch.split(image_b, height//2, dim=3)
 
     images = [image_1, image_2, image_3, image_4]
     # image_1 = image
-    # image_2 = rotate(image, 20, BATCH_SIZE_DEFAULT)
+    # image_2 = random_erease(image, BATCH_SIZE_DEFAULT)
+    # image_2 = torch.transpose(image_2, 1, 3)
+    # print(image_2.shape)
+    # show_mnist(image_2[0], image_2[0].shape[1], image_2[0].shape[2])
+    #
     # image_3 = scale(image, BATCH_SIZE_DEFAULT)
+    # show_mnist(image_3[0], image_3[0].shape[1], image_3[0].shape[2])
+    #
     # image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
+    # show_mnist(image_4[0], image_4.shape[1], image_4.shape[2])
 
     prod = torch.ones([BATCH_SIZE_DEFAULT, 10])
 
@@ -74,27 +109,14 @@ def encode_4_patches(image, colons):
 
     for idx, i in enumerate(images):
         z = i.to('cuda')
-        c_picked = random.randint(0, 3)
-        pred = colons[c_picked](z)
+
+        pred = colons[0](z)
 
         preds.append(pred)
         prod *= pred.to('cpu')
 
     return prod, preds
-    # image_1 = image_1.to('cuda')
-    # pred_1 =
-    #
-    #
-    # image_2 = image_2.to('cuda')
-    # image_3 = image_3.to('cuda')
-    # image_4 = image_4.to('cuda')
-    #
-    # pred_1 = colons[0](i_1)
-    # pred_2 = colons[0](i_2)
-    # pred_3 = colons[0](i_3)
-    # pred_4 = colons[0](i_4)
-    #
-    # return pred_1, pred_2, pred_3, pred_4
+
 
 
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
@@ -160,7 +182,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 10400
+    input = 12544
     #input = 1152
 
     # c = Ensemble()
@@ -170,29 +192,29 @@ def train():
     c.cuda()
     colons.append(c)
 
-    c2 = EncoderSTL(3, input)
-    c2.cuda()
-    colons.append(c2)
-
-    c3 = EncoderSTL(3, input)
-    c3.cuda()
-    colons.append(c3)
-
-    c4 = EncoderSTL(3, input)
-    c4.cuda()
-    colons.append(c4)
+    # c2 = EncoderSTL(3, input)
+    # c2.cuda()
+    # colons.append(c2)
+    #
+    # c3 = EncoderSTL(3, input)
+    # c3.cuda()
+    # colons.append(c3)
+    #
+    # c4 = EncoderSTL(3, input)
+    # c4.cuda()
+    # colons.append(c4)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
     optimizers.append(optimizer)
 
-    optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer2)
-
-    optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer3)
-
-    optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer4)
+    # optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
+    # optimizers.append(optimizer2)
+    #
+    # optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
+    # optimizers.append(optimizer3)
+    #
+    # optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
+    # optimizers.append(optimizer4)
 
     max_loss = 1999
 
@@ -202,12 +224,16 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        c.cuda()
+        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+
         if iteration % EVAL_FREQ_DEFAULT == 0:
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
-            c.cuda()
+            p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+            p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+
             print()
             print("iteration: ", iteration)
 
@@ -239,8 +265,9 @@ def to_tensor(X, batch_size=BATCH_SIZE_DEFAULT):
 
 
 def show_mnist(first_image, w, h):
-    pixels = first_image.reshape((w, h))
-    plt.imshow(pixels, cmap='gray')
+    #pixels = first_image.reshape((w, h))
+    pixels = first_image
+    plt.imshow(pixels)
     plt.show()
 
 
