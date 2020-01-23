@@ -18,13 +18,13 @@ from four_variate_mi import four_variate_IID_loss
 from ensemble import Ensemble
 from four_variate_mi import four_variate_IID_loss
 from mutual_info import IID_loss
-from utils import rotate, scale, random_erease
+from utils import rotate, scale, to_gray, random_erease
 from colon_mvmi import Colon
 
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 100
+BATCH_SIZE_DEFAULT = 180
 EVAL_FREQ_DEFAULT = 200
 
 FLAGS = None
@@ -61,17 +61,21 @@ def encode_4_patches(image, colons,
     width = image.shape[2]
     height = image.shape[3]
 
-    split_at_pixel = (width-1) // 2
+    split_at_pixel = 54
 
-    # image_1 = image[:, :, 0: split_at_pixel, :]
-    # image_2 = image[:, :, width - split_at_pixel:, :]
-    # image_3 = image[:, :, :, 0: split_at_pixel]
-    # image_4 = image[:, :, :, height - split_at_pixel:]
+    image = image[:, :, 5:90, 5:90]
+    image_1 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
+    image_2 = image[:, :, 85 - split_at_pixel:, 0: split_at_pixel]
+    image_3 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
+    image_4 = image[:, :, 85 - split_at_pixel:, 85 - split_at_pixel:]
 
-    image_1 = image
-    image_2 = rotate(image, 25, BATCH_SIZE_DEFAULT)
-    image_3 = scale(image, 76, 10, BATCH_SIZE_DEFAULT)
-    image_4 = scale(image, 56, 20, BATCH_SIZE_DEFAULT)
+    image_1 = to_gray(image_1)
+    image_2 = rotate(image_2, 25, BATCH_SIZE_DEFAULT)
+
+    image_3 = scale(image_3, 46, 4, BATCH_SIZE_DEFAULT)
+    image_3 = random_erease(image_3, BATCH_SIZE_DEFAULT)
+
+    image_4 = scale(image_4, 38, 8, BATCH_SIZE_DEFAULT)
 
     # image_4 = torch.transpose(image_4, 1, 3)
     # show_mnist(image_4[0], image_4[0].shape[1], image_4[0].shape[2])
@@ -91,6 +95,12 @@ def encode_4_patches(image, colons,
     # image_3, image_4 = torch.split(image_b, height//2, dim=3)
 
     images = [image_1, image_2, image_3, image_4]
+
+    # p1 = p1.to('cuda')
+    # p2 = p2.to('cuda')
+    # p3 = p3.to('cuda')
+    # p4 = p4.to('cuda')
+
     # image_1 = image
     # image_2 = random_erease(image, BATCH_SIZE_DEFAULT)
     # image_2 = torch.transpose(image_2, 1, 3)
@@ -119,19 +129,24 @@ def encode_4_patches(image, colons,
 
 
 
-def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
+def forward_block(X, ids, colons, optimizers, train, to_tensor_size,
+                  p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                  p2=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                  p3=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                  p4=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                  ):
     x_train = X[ids, :]
 
     x_tensor = to_tensor(x_train, to_tensor_size)
 
     images = x_tensor/255.0
 
-    product, preds = encode_4_patches(images, colons)
+    product, preds = encode_4_patches(images, colons, p1, p2, p3, p4)
 
     product = product.mean(dim=0)
     log_product = torch.log(product)
 
-    loss = - log_product.mean(dim=0)
+    loss = - log_product.mean(dim=0) - 2.3
 
     if train:
         torch.autograd.set_detect_anomaly(True)
@@ -182,7 +197,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 12544
+    input = 8192
     #input = 1152
 
     # c = Ensemble()
@@ -224,15 +239,19 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        # p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        # p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
-            p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-            p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+            print("loss 1: ", mim.item())
+            # p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            # print("loss 2: ", mim.item())
+            # p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            # print("loss 3: ", mim.item())
 
             print()
             print("iteration: ", iteration)

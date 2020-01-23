@@ -26,19 +26,19 @@ class EncoderSTL(nn.Module):
                      output dimensions of the MLP
         """
         super(EncoderSTL, self).__init__()
-        stride = 2
+        stride = 1
         max_s = 2
         self.conv = nn.Sequential(
-            nn.Conv2d(n_channels, 64, kernel_size=3, stride=stride, padding=1),
+            nn.Conv2d(n_channels, 32, kernel_size=3, stride=stride, padding=0),
             #nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
             #
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
             #
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
             #
@@ -50,11 +50,11 @@ class EncoderSTL(nn.Module):
 
         self.linear = nn.Sequential(
             #nn.Dropout(0.7),
-            nn.Linear(n_inputs, 500),
+            nn.Linear(n_inputs, 200),
             nn.Tanh(),
 
             #nn.Dropout(0.7),
-            nn.Linear(500, 10),
+            nn.Linear(200, 10),
         )
 
         self.softmax = nn.Softmax(dim=1)
@@ -71,6 +71,8 @@ class EncoderSTL(nn.Module):
 
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
+
+       # linear_input = torch.cat([conv, p1, p2, p3, p4], 1)
 
         logits = self.linear(conv)
         out = self.softmax(logits)
