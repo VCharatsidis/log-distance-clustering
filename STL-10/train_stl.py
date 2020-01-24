@@ -24,9 +24,9 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 180
+BATCH_SIZE_DEFAULT = 150
 EVAL_FREQ_DEFAULT = 200
-
+NUMBER_CLASSES = 20
 FLAGS = None
 
 
@@ -61,7 +61,7 @@ def encode_4_patches(image, colons,
     width = image.shape[2]
     height = image.shape[3]
 
-    split_at_pixel = 54
+    split_at_pixel = 50
 
     image = image[:, :, 5:90, 5:90]
     image_1 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
@@ -72,22 +72,26 @@ def encode_4_patches(image, colons,
     image_1 = to_gray(image_1)
     image_2 = rotate(image_2, 25, BATCH_SIZE_DEFAULT)
 
-    image_3 = scale(image_3, 46, 4, BATCH_SIZE_DEFAULT)
+    image_3 = scale(image_3, 42, 4, BATCH_SIZE_DEFAULT)
     image_3 = random_erease(image_3, BATCH_SIZE_DEFAULT)
 
-    image_4 = scale(image_4, 38, 8, BATCH_SIZE_DEFAULT)
+    image_4 = scale(image_4, 34, 8, BATCH_SIZE_DEFAULT)
 
     # image_4 = torch.transpose(image_4, 1, 3)
     # show_mnist(image_4[0], image_4[0].shape[1], image_4[0].shape[2])
+    # image_4 = torch.transpose(image_4, 1, 3)
     #
     # image_2 = torch.transpose(image_2, 1, 3)
     # show_mnist(image_2[0], image_2[0].shape[1], image_2[0].shape[2])
+    # image_2 = torch.transpose(image_2, 1, 3)
     #
     # image_3 = torch.transpose(image_3, 1, 3)
     # show_mnist(image_3[0], image_3[0].shape[1], image_3[0].shape[2])
+    # image_3 = torch.transpose(image_3, 1, 3)
     #
     # image_1 = torch.transpose(image_1, 1, 3)
     # show_mnist(image_1[0], image_1[0].shape[1], image_1[0].shape[2])
+    # image_1 = torch.transpose(image_1, 1, 3)
 
     # image_a, image_b = torch.split(image, width//2, dim=2)
     #
@@ -113,7 +117,7 @@ def encode_4_patches(image, colons,
     # image_4 = random_erease(image, BATCH_SIZE_DEFAULT)
     # show_mnist(image_4[0], image_4.shape[1], image_4.shape[2])
 
-    prod = torch.ones([BATCH_SIZE_DEFAULT, 10])
+    prod = torch.ones([BATCH_SIZE_DEFAULT, NUMBER_CLASSES])
 
     preds = []
 
@@ -130,10 +134,10 @@ def encode_4_patches(image, colons,
 
 
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size,
-                  p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                  p2=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                  p3=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                  p4=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                  p1=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                  p2=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                  p3=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                  p4=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
                   ):
     x_train = X[ids, :]
 
@@ -146,7 +150,7 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size,
     product = product.mean(dim=0)
     log_product = torch.log(product)
 
-    loss = - log_product.mean(dim=0) - 2.3
+    loss = -log_product.mean(dim=0)
 
     if train:
         torch.autograd.set_detect_anomaly(True)
@@ -197,7 +201,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 8192
+    input = 4096
     #input = 1152
 
     # c = Ensemble()

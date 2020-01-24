@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch
 
 
-class EncoderSTL(nn.Module):
+class InfoEncoder(nn.Module):
     """
     This class implements a Multi-layer Perceptron in PyTorch.
     It handles the different layers and parameters of the model.
@@ -25,16 +25,12 @@ class EncoderSTL(nn.Module):
                      This number is required in order to specify the
                      output dimensions of the MLP
         """
-        super(EncoderSTL, self).__init__()
-        stride = 1
+        super(InfoEncoder, self).__init__()
+        stride = 2
         max_s = 2
         self.conv = nn.Sequential(
-            nn.Conv2d(n_channels, 32, kernel_size=3, stride=stride, padding=0),
+            nn.Conv2d(n_channels, 64, kernel_size=3, stride=stride, padding=0),
             #nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
-            #
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
             #
@@ -45,16 +41,23 @@ class EncoderSTL(nn.Module):
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
+            #
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
+
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
 
         )
 
         self.linear = nn.Sequential(
             #nn.Dropout(0.7),
-            nn.Linear(n_inputs, 500),
+            nn.Linear(n_inputs, 1000),
             nn.Tanh(),
 
-            nn.Dropout(0.5),
-            nn.Linear(500, 20),
+            nn.Linear(1000, 10),
         )
 
         self.softmax = nn.Softmax(dim=1)
