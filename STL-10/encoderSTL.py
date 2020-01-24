@@ -59,7 +59,7 @@ class EncoderSTL(nn.Module):
 
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x):
+    def forward(self, x, p1, p2, p3):
         """
         Performs forward pass of the input. Here an input tensor x is transformed through
         several layer transformations.
@@ -72,9 +72,9 @@ class EncoderSTL(nn.Module):
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
 
-       # linear_input = torch.cat([conv, p1, p2, p3, p4], 1)
+        linear_input = torch.cat([conv, p1, p2, p3], 1)
 
-        logits = self.linear(conv)
+        logits = self.linear(linear_input)
         out = self.softmax(logits)
 
         return out

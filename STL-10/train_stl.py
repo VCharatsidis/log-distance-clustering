@@ -24,7 +24,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 150
+BATCH_SIZE_DEFAULT = 100
 EVAL_FREQ_DEFAULT = 200
 NUMBER_CLASSES = 20
 FLAGS = None
@@ -100,10 +100,10 @@ def encode_4_patches(image, colons,
 
     images = [image_1, image_2, image_3, image_4]
 
-    # p1 = p1.to('cuda')
-    # p2 = p2.to('cuda')
-    # p3 = p3.to('cuda')
-    # p4 = p4.to('cuda')
+    p1 = p1.to('cuda')
+    p2 = p2.to('cuda')
+    p3 = p3.to('cuda')
+    p4 = p4.to('cuda')
 
     # image_1 = image
     # image_2 = random_erease(image, BATCH_SIZE_DEFAULT)
@@ -118,16 +118,37 @@ def encode_4_patches(image, colons,
     # show_mnist(image_4[0], image_4.shape[1], image_4.shape[2])
 
     prod = torch.ones([BATCH_SIZE_DEFAULT, NUMBER_CLASSES])
-
+    prev_preds = [p1, p2, p3, p4]
     preds = []
 
-    for idx, i in enumerate(images):
-        z = i.to('cuda')
+    z = images[0].to('cuda')
+    pred = colons[0](z, p2, p3, p4)
+    preds.append(pred)
+    prod *= pred.to('cpu')
 
-        pred = colons[0](z)
+    z = images[1].to('cuda')
+    pred = colons[0](z, p1, p3, p4)
+    preds.append(pred)
+    prod *= pred.to('cpu')
 
-        preds.append(pred)
-        prod *= pred.to('cpu')
+    z = images[2].to('cuda')
+    pred = colons[0](z, p1, p2, p4)
+    preds.append(pred)
+    prod *= pred.to('cpu')
+
+    z = images[3].to('cuda')
+    pred = colons[0](z, p1, p2, p3)
+    preds.append(pred)
+    prod *= pred.to('cpu')
+
+
+    # for idx, i in enumerate(images):
+    #     z = i.to('cuda')
+    #
+    #     pred = colons[0](z,)
+    #
+    #     preds.append(pred)
+    #     prod *= pred.to('cpu')
 
     return prod, preds
 
@@ -201,7 +222,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 4096
+    input = 4156
     #input = 1152
 
     # c = Ensemble()
@@ -243,8 +264,8 @@ def train():
 
         train = True
         p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        # p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-        # p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+        p1, p2, p3, p4, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
 
@@ -252,10 +273,10 @@ def train():
 
             p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
             print("loss 1: ", mim.item())
-            # p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-            # print("loss 2: ", mim.item())
-            # p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
-            # print("loss 3: ", mim.item())
+            p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            print("loss 2: ", mim.item())
+            p1, p2, p3, p4, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4)
+            print("loss 3: ", mim.item())
 
             print()
             print("iteration: ", iteration)

@@ -2,13 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4e4b8429-d841-4547-bff1-3c027a96a34a" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/STL-10/infomax_encoder.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/STL-10/infomax_train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/STL-10/encoderSTL.py" beforeDir="false" afterPath="$PROJECT_DIR$/STL-10/encoderSTL.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/STL-10/train_stl.py" beforeDir="false" afterPath="$PROJECT_DIR$/STL-10/train_stl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/four_variate_mi.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mutual_info/train_social_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/mutual_info/train_social_net.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -18,11 +13,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3192">
-              <caret line="85" column="46" lean-forward="true" selection-start-line="85" selection-start-column="46" selection-end-line="85" selection-end-column="46" />
+            <state relative-caret-position="187">
+              <caret line="26" column="24" selection-start-line="26" selection-start-column="24" selection-end-line="26" selection-end-column="24" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -30,7 +25,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mutual_info/train_social_net.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="682">
@@ -120,8 +115,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="282">
-              <caret line="52" column="36" lean-forward="true" selection-start-line="52" selection-start-column="36" selection-end-line="52" selection-end-column="36" />
+            <state relative-caret-position="290">
+              <caret line="76" column="41" selection-start-line="76" selection-start-column="41" selection-end-line="76" selection-end-column="41" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -180,14 +175,14 @@
         <option value="$PROJECT_DIR$/mutual_info/vae_dec.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_four_variate.py" />
         <option value="$PROJECT_DIR$/mutual_info/utils.py" />
-        <option value="$PROJECT_DIR$/STL-10/encoderSTL.py" />
-        <option value="$PROJECT_DIR$/STL-10/train_stl.py" />
         <option value="$PROJECT_DIR$/infomax/infomax_encoder.py" />
         <option value="$PROJECT_DIR$/infomax/infomax_train.py" />
         <option value="$PROJECT_DIR$/STL-10/infomax_encoder.py" />
         <option value="$PROJECT_DIR$/STL-10/infomax_train.py" />
         <option value="$PROJECT_DIR$/mutual_info/four_variate_mi.py" />
         <option value="$PROJECT_DIR$/mutual_info/train_social_net.py" />
+        <option value="$PROJECT_DIR$/STL-10/encoderSTL.py" />
+        <option value="$PROJECT_DIR$/STL-10/train_stl.py" />
       </list>
     </option>
   </component>
@@ -255,7 +250,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.train_social_net">
+  <component name="RunManager" selected="Python.train_stl">
     <configuration name="infomax_train" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="log_distance_clustering" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -363,9 +358,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.train_stl" />
         <item itemvalue="Python.train_social_net" />
         <item itemvalue="Python.infomax_train" />
-        <item itemvalue="Python.train_stl" />
         <item itemvalue="Python.train_four_variate" />
         <item itemvalue="Python.stl10_input" />
       </list>
@@ -386,6 +381,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="265" y="29" width="1524" height="1002" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2267833" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -616,16 +612,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="282">
-          <caret line="52" column="36" lean-forward="true" selection-start-line="52" selection-start-column="36" selection-end-line="52" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#38#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/STL-10/infomax_encoder.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1003">
@@ -646,16 +632,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3192">
-          <caret line="85" column="46" lean-forward="true" selection-start-line="85" selection-start-column="46" selection-end-line="85" selection-end-column="46" />
-          <folding>
-            <element signature="e#0#38#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/mutual_info/four_variate_mi.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="119">
@@ -670,6 +646,26 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="682">
           <caret line="281" column="27" lean-forward="true" selection-start-line="281" selection-start-column="27" selection-end-line="281" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/STL-10/encoderSTL.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="290">
+          <caret line="76" column="41" selection-start-line="76" selection-start-column="41" selection-end-line="76" selection-end-column="41" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/STL-10/train_stl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="26" column="24" selection-start-line="26" selection-start-column="24" selection-end-line="26" selection-end-column="24" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>
