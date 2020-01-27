@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch
 
 
-class EncoderSTL(nn.Module):
+class Specialist(nn.Module):
     """
     This class implements a Multi-layer Perceptron in PyTorch.
     It handles the different layers and parameters of the model.
@@ -25,7 +25,7 @@ class EncoderSTL(nn.Module):
                      This number is required in order to specify the
                      output dimensions of the MLP
         """
-        super(EncoderSTL, self).__init__()
+        super(Specialist, self).__init__()
         stride = 1
         max_s = 2
         self.conv = nn.Sequential(
@@ -54,12 +54,13 @@ class EncoderSTL(nn.Module):
             nn.Tanh(),
 
             nn.Dropout(0.5),
-            nn.Linear(800, 10),
+            nn.Linear(800, 1),
+            nn.Sigmoid()
         )
 
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Sigmoid
 
-    def forward(self, x, p1, p2, p3):
+    def forward(self, x):
         """
         Performs forward pass of the input. Here an input tensor x is transformed through
         several layer transformations.
@@ -72,9 +73,11 @@ class EncoderSTL(nn.Module):
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
 
-        linear_input = torch.cat([conv, p1, p2, p3], 1)
+        #linear_input = torch.cat([conv, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0], 1)
 
-        logits = self.linear(linear_input)
-        out = self.softmax(logits)
 
-        return out
+        logits = self.linear(conv)
+
+        # out = self.softmax(logits)
+
+        return logits

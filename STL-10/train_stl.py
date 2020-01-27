@@ -18,7 +18,7 @@ from four_variate_mi import four_variate_IID_loss
 from ensemble import Ensemble
 from four_variate_mi import four_variate_IID_loss
 from mutual_info import IID_loss
-from utils import rotate, scale, to_gray, random_erease
+from utils import rotate, scale, to_gray, random_erease, vertical_flip
 from colon_mvmi import Colon
 
 # Default constants
@@ -26,7 +26,7 @@ LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
 BATCH_SIZE_DEFAULT = 100
 EVAL_FREQ_DEFAULT = 200
-NUMBER_CLASSES = 20
+NUMBER_CLASSES = 10
 FLAGS = None
 
 
@@ -43,10 +43,10 @@ def kl_divergence(p, q):
 
 
 def encode_4_patches(image, colons,
-                     p1=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                     p2=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                     p3=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
-                     p4=torch.zeros([BATCH_SIZE_DEFAULT, 10]),
+                     p1=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                     p2=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                     p3=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
+                     p4=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
                      ):
 
     #split_at_pixel = 19
@@ -69,13 +69,28 @@ def encode_4_patches(image, colons,
     image_3 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
     image_4 = image[:, :, 85 - split_at_pixel:, 85 - split_at_pixel:]
 
-    image_1 = to_gray(image_1)
-    image_2 = rotate(image_2, 25, BATCH_SIZE_DEFAULT)
+    patches = {0: image_1,
+               1: image_2,
+               2: image_3,
+               3: image_4}
 
-    image_3 = scale(image_3, 42, 4, BATCH_SIZE_DEFAULT)
-    image_3 = random_erease(image_3, BATCH_SIZE_DEFAULT)
+    patch_ids = np.random.choice(len(patches), size=4, replace=False)
 
-    image_4 = scale(image_4, 34, 8, BATCH_SIZE_DEFAULT)
+    augments = {0: to_gray(patches[patch_ids[0]], BATCH_SIZE_DEFAULT),
+                1: rotate(patches[patch_ids[1]], 20, BATCH_SIZE_DEFAULT),
+                2: rotate(patches[patch_ids[2]], -20, BATCH_SIZE_DEFAULT),
+                3: scale(patches[patch_ids[3]], 40, 5, BATCH_SIZE_DEFAULT),
+                4: vertical_flip(patches[patch_ids[0]], BATCH_SIZE_DEFAULT),
+                5: scale(patches[patch_ids[1]], 30, 10, BATCH_SIZE_DEFAULT),
+                6: random_erease(patches[patch_ids[2]], BATCH_SIZE_DEFAULT),
+                7: patches[patch_ids[3]]}
+
+    ids = np.random.choice(len(augments), size=4, replace=False)
+
+    image_1 = augments[ids[0]]
+    image_2 = augments[ids[1]]
+    image_3 = augments[ids[2]]
+    image_4 = augments[ids[3]]
 
     # image_4 = torch.transpose(image_4, 1, 3)
     # show_mnist(image_4[0], image_4[0].shape[1], image_4[0].shape[2])
@@ -222,7 +237,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 4156
+    input = 4126
     #input = 1152
 
     # c = Ensemble()
