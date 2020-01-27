@@ -25,7 +25,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 65
+BATCH_SIZE_DEFAULT = 50
 EVAL_FREQ_DEFAULT = 100
 NUMBER_CLASSES = 1
 FLAGS = None
@@ -92,19 +92,21 @@ def encode_4_patches(image, colons,
     #             6: random_erease(patches[patch_ids[2]], BATCH_SIZE_DEFAULT),
     #             7: patches[patch_ids[3]]}
 
-    # augments = {0: to_gray(image, BATCH_SIZE_DEFAULT),
-    #             1: rotate(image, 20, BATCH_SIZE_DEFAULT),
-    #             2: rotate(image, -20, BATCH_SIZE_DEFAULT),
-    #             3: scale(image, 40, 5, BATCH_SIZE_DEFAULT),
-    #             4: vertical_flip(image, BATCH_SIZE_DEFAULT),
-    #             5: scale(image, 30, 10, BATCH_SIZE_DEFAULT),
-    #             6: random_erease(image, BATCH_SIZE_DEFAULT),
-    #             7: image}
-    #
-    # ids = np.random.choice(len(augments), size=1, replace=False)
-    #
-    # image = augments[ids[0]]
-    #image.to('cuda')
+    augments = {0: to_gray(image, BATCH_SIZE_DEFAULT),
+                1: rotate(image, 20, BATCH_SIZE_DEFAULT),
+                2: rotate(image, -20, BATCH_SIZE_DEFAULT),
+                3: scale(image, 40, 5, BATCH_SIZE_DEFAULT),
+                4: vertical_flip(image, BATCH_SIZE_DEFAULT),
+                5: scale(image, 30, 10, BATCH_SIZE_DEFAULT),
+                6: random_erease(image, BATCH_SIZE_DEFAULT),
+                7: image}
+
+    ids = np.random.choice(len(augments), size=1, replace=False)
+
+    image_2 = augments[ids[0]]
+
+    image = image.to('cuda')
+    image_2 = image_2.to('cuda')
 
     # image = torch.transpose(image, 1, 3)
     # show_mnist(image[0], image[0].shape[1], image[0].shape[2])
@@ -135,9 +137,13 @@ def encode_4_patches(image, colons,
         # p8 = p8.cuda()
         # p9 = p9.cuda()
         # p0 = p0.cuda()
-        image = image.to('cuda')
-        colons[idx] = colons[idx].to('cuda')
-        pred = colons[idx](image)
+
+        # colons[idx] = colons[idx].to('cuda')
+
+        pred_1 = colons[idx](image)
+        pred_2 = colons[idx](image_2)
+        pred = (pred_1 + pred_2)/2
+
         new_preds.append(pred.to('cpu'))
 
 
