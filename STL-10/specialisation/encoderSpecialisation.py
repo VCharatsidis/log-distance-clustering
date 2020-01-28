@@ -50,11 +50,11 @@ class Specialist(nn.Module):
 
         self.linear = nn.Sequential(
             #nn.Dropout(0.7),
-            nn.Linear(n_inputs, 1000),
+            nn.Linear(n_inputs, 800),
             nn.Tanh(),
 
             #nn.Dropout(0.5),
-            nn.Linear(1000, 1),
+            nn.Linear(800, 1),
             nn.Sigmoid()
         )
 
@@ -75,8 +75,7 @@ class Specialist(nn.Module):
 
         linear_input = torch.cat([conv, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0], 1)
 
-
-        logits = self.linear(conv)
+        logits = self.linear(linear_input)
 
         # out = self.softmax(logits)
 

@@ -25,7 +25,7 @@ from colon_mvmi import Colon
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-6
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 22
+BATCH_SIZE_DEFAULT = 16
 EVAL_FREQ_DEFAULT = 100
 NUMBER_CLASSES = 1
 FLAGS = None
@@ -241,7 +241,7 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 4096
+    input = 4106
     #input = 1152
 
 

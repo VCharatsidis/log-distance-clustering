@@ -28,8 +28,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/STL-10/specialisation/train_specialisation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-6426">
-              <caret line="25" column="21" selection-start-line="25" selection-end-line="25" selection-end-column="21" />
+            <state relative-caret-position="-2074">
+              <caret line="45" column="4" selection-start-line="45" selection-start-column="4" selection-end-line="45" selection-end-column="4" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -62,8 +62,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/STL-10/specialisation/encoderSpecialisation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="62" column="63" selection-start-line="62" selection-start-column="63" selection-end-line="62" selection-end-column="63" />
+            <state relative-caret-position="918">
+              <caret line="54" lean-forward="true" selection-start-line="54" selection-end-line="54" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -236,7 +236,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../DefectVisualisation/get_data/get_data.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../DefectVisualisation" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -392,8 +392,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="34" y="6" width="1843" height="1010" extended-state="0" />
-    <editor active="true" />
+    <frame x="34" y="6" width="1843" height="1010" extended-state="1" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1867036" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -686,8 +685,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/STL-10/specialisation/encoderSpecialisation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="62" column="63" selection-start-line="62" selection-start-column="63" selection-end-line="62" selection-end-column="63" />
+        <state relative-caret-position="918">
+          <caret line="54" lean-forward="true" selection-start-line="54" selection-end-line="54" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>
@@ -696,8 +695,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/STL-10/specialisation/train_specialisation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-6426">
-          <caret line="25" column="21" selection-start-line="25" selection-end-line="25" selection-end-column="21" />
+        <state relative-caret-position="-2074">
+          <caret line="45" column="4" selection-start-line="45" selection-start-column="4" selection-end-line="45" selection-end-column="4" />
           <folding>
             <element signature="e#0#38#0" expanded="true" />
           </folding>
