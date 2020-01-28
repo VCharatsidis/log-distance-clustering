@@ -50,17 +50,17 @@ class Specialist(nn.Module):
 
         self.linear = nn.Sequential(
             #nn.Dropout(0.7),
-            nn.Linear(n_inputs, 800),
+            nn.Linear(n_inputs, 1000),
             nn.Tanh(),
 
-            nn.Dropout(0.5),
-            nn.Linear(800, 1),
+            #nn.Dropout(0.5),
+            nn.Linear(1000, 1),
             nn.Sigmoid()
         )
 
         self.softmax = nn.Sigmoid
 
-    def forward(self, x):
+    def forward(self, x, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0):
         """
         Performs forward pass of the input. Here an input tensor x is transformed through
         several layer transformations.
@@ -73,7 +73,7 @@ class Specialist(nn.Module):
         conv = self.conv(x)
         conv = torch.flatten(conv, 1)
 
-        #linear_input = torch.cat([conv, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0], 1)
+        linear_input = torch.cat([conv, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0], 1)
 
 
         logits = self.linear(conv)
