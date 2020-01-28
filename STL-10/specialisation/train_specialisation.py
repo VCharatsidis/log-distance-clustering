@@ -23,9 +23,9 @@ from utils import rotate, scale, to_gray, random_erease, vertical_flip
 from colon_mvmi import Colon
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-4
+LEARNING_RATE_DEFAULT = 1e-5
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 50
+BATCH_SIZE_DEFAULT = 32
 EVAL_FREQ_DEFAULT = 100
 NUMBER_CLASSES = 1
 FLAGS = None
@@ -71,42 +71,21 @@ def encode_4_patches(image, colons,
     split_at_pixel = 50
 
     image = image[:, :, 20:70, 20:70]
-    # image_1 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
-    # image_2 = image[:, :, 85 - split_at_pixel:, 0: split_at_pixel]
-    # image_3 = image[:, :, 0: split_at_pixel, 0: split_at_pixel]
-    # image_4 = image[:, :, 85 - split_at_pixel:, 85 - split_at_pixel:]
-
-    # patches = {0: image_1,
-    #            1: image_2,
-    #            2: image_3,
-    #            3: image_4}
-    #
-    # patch_ids = np.random.choice(len(patches), size=4, replace=False)
-    #
-    # augments = {0: to_gray(patches[patch_ids[0]], BATCH_SIZE_DEFAULT),
-    #             1: rotate(patches[patch_ids[1]], 20, BATCH_SIZE_DEFAULT),
-    #             2: rotate(patches[patch_ids[2]], -20, BATCH_SIZE_DEFAULT),
-    #             3: scale(patches[patch_ids[3]], 40, 5, BATCH_SIZE_DEFAULT),
-    #             4: vertical_flip(patches[patch_ids[0]], BATCH_SIZE_DEFAULT),
-    #             5: scale(patches[patch_ids[1]], 30, 10, BATCH_SIZE_DEFAULT),
-    #             6: random_erease(patches[patch_ids[2]], BATCH_SIZE_DEFAULT),
-    #             7: patches[patch_ids[3]]}
 
     augments = {0: to_gray(image, BATCH_SIZE_DEFAULT),
                 1: rotate(image, 20, BATCH_SIZE_DEFAULT),
                 2: rotate(image, -20, BATCH_SIZE_DEFAULT),
                 3: scale(image, 40, 5, BATCH_SIZE_DEFAULT),
+                #3: scale(image, 32, 4, BATCH_SIZE_DEFAULT),
                 4: vertical_flip(image, BATCH_SIZE_DEFAULT),
                 5: scale(image, 30, 10, BATCH_SIZE_DEFAULT),
+                #5: scale(image, 24, 8, BATCH_SIZE_DEFAULT),
                 6: random_erease(image, BATCH_SIZE_DEFAULT),
-                7: image}
+                7: vertical_flip(image, BATCH_SIZE_DEFAULT)}
 
     ids = np.random.choice(len(augments), size=1, replace=False)
 
     image_2 = augments[ids[0]]
-
-    image = image.to('cuda')
-    image_2 = image_2.to('cuda')
 
     # image = torch.transpose(image, 1, 3)
     # show_mnist(image[0], image[0].shape[1], image[0].shape[2])
@@ -123,6 +102,9 @@ def encode_4_patches(image, colons,
     # image_1 = torch.transpose(image_1, 1, 3)
     # show_mnist(image_1[0], image_1[0].shape[1], image_1[0].shape[2])
     # image_1 = torch.transpose(image_1, 1, 3)
+
+    image = image.to('cuda')
+    image_2 = image_2.to('cuda')
 
     new_preds = []
     for idx, colon in enumerate(colons):
@@ -146,7 +128,6 @@ def encode_4_patches(image, colons,
 
         new_preds.append(pred.to('cpu'))
 
-
     products = []
     for prod in range(10):
         product = torch.ones([BATCH_SIZE_DEFAULT, 1])
@@ -158,6 +139,7 @@ def encode_4_patches(image, colons,
                 product *= prediction
 
         products.append(product)
+
 
 
     # print(len(products))
@@ -344,10 +326,22 @@ def train():
         # p1, p2, p3, p4, p5, p6, p7, p8, p9, p0, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
+            # print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+            print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
-
             products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            print_dict = gather_data(print_dict, products, targets, test_ids)
+
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            print_dict = gather_data(print_dict, products, targets, test_ids)
+
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            print_dict = gather_data(print_dict, products, targets, test_ids)
+
+
             print("loss 1: ", mim.item())
             # p1, p2, p3, p4, p5, p6, p7, p8, p9, p0, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
             # print("loss 2: ", mim.item())
@@ -357,7 +351,7 @@ def train():
             print()
             print("iteration: ", iteration)
 
-            print_info(products, targets, test_ids)
+            print_info(print_dict)
 
             test_loss = mim.item()
 
@@ -385,12 +379,7 @@ def show_mnist(first_image, w, h):
     plt.imshow(pixels)
     plt.show()
 
-
-def print_info(products, targets, test_ids):
-    #print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-    print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
-    # print(products[0].shape)
-    # input()
+def gather_data(print_dict, products, targets, test_ids):
     for i in range(products[0].shape[0]):
         res = ""
 
@@ -405,6 +394,10 @@ def print_info(products, targets, test_ids):
         label = targets[test_ids[i]]
         print_dict[label] += res
 
+    return print_dict
+
+
+def print_info(print_dict):
     for i in print_dict.keys():
         print(i, " : ", print_dict[i])
 

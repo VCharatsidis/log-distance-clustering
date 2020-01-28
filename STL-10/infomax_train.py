@@ -119,7 +119,6 @@ def train():
         if iteration % EVAL_FREQ_DEFAULT == 0:
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
-
             p1, mim = forward_block(X_test, test_ids, c, optimizer, False, BATCH_SIZE_DEFAULT)
             print("loss : ", mim.item())
 
@@ -128,7 +127,21 @@ def train():
 
             print(p1[0])
 
-            print_info(p1, targets, test_ids)
+            # dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+            dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
+            dict = gather_data(p1, targets, test_ids, dict)
+
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+            p1, mim = forward_block(X_test, test_ids, c, optimizer, False, BATCH_SIZE_DEFAULT)
+
+            dict = gather_data(p1, targets, test_ids, dict)
+
+            test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
+            p1, mim = forward_block(X_test, test_ids, c, optimizer, False, BATCH_SIZE_DEFAULT)
+
+            dict = gather_data(p1, targets, test_ids, dict)
+
+            print_info(dict)
 
             test_loss = mim.item()
 
@@ -140,6 +153,21 @@ def train():
 
             print("test loss " + str(test_loss))
             print("")
+
+
+def gather_data(p1, targets, test_ids, print_dict):
+    for i in range(p1.shape[0]):
+        if i == 10:
+            print("")
+
+        val, index = torch.max(p1[i], 0)
+
+        string = str(index.data.cpu().numpy()) + " , "
+
+        label = targets[test_ids[i]]
+        print_dict[label] += string
+
+    return print_dict
 
 
 def to_tensor(X, batch_size=BATCH_SIZE_DEFAULT):
