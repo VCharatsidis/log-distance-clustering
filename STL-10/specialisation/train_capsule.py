@@ -24,9 +24,9 @@ from colon_mvmi import Colon
 from capsule_net import CapsNet
 
 # Default constants
-LEARNING_RATE_DEFAULT = 1e-4
+LEARNING_RATE_DEFAULT = 1e-3
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 128
+BATCH_SIZE_DEFAULT = 32
 EVAL_FREQ_DEFAULT = 100
 NUMBER_CLASSES = 1
 FLAGS = None
@@ -144,7 +144,7 @@ def encode_4_patches(image, colons):
     # show_mnist(image_4[0], image_4.shape[1], image_4.shape[2])
 
 
-    return products
+    return products, new_preds
 
 
 def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
@@ -155,7 +155,7 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     images = x_tensor/255.0
 
-    products = encode_4_patches(images, colons)
+    products, new_preds = encode_4_patches(images, colons)
 
     losses = []
     total_loss = torch.zeros([1])
@@ -179,7 +179,7 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
         for idx, i in enumerate(optimizers):
             i.step()
 
-    return products, total_loss
+    return products, total_loss, new_preds
 
 
 def print_params(model):
@@ -229,14 +229,14 @@ def train():
         ids = np.random.choice(len(X_train), size=BATCH_SIZE_DEFAULT, replace=False)
 
         train = True
-        products, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
+        products, mim, new_preds= forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             # print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
             print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 0: ""}
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
-            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            products, mim, new_preds = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
 
             # test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             # products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
@@ -246,13 +246,13 @@ def train():
             # products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
             # print_dict = gather_data(print_dict, products, targets, test_ids)
 
-            print("loss 1: ", mim.item())
-            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
+            # print("loss 1: ", mim.item())
+            # products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
 
             print()
             print("iteration: ", iteration)
 
-            print_dict = gather_data(print_dict, products, targets, test_ids)
+            print_dict = gather_data(print_dict, new_preds, targets, test_ids)
             print_info(print_dict)
 
             test_loss = mim.item()
@@ -294,6 +294,8 @@ def gather_data(print_dict, products, targets, test_ids):
         res += ", "
 
         label = targets[test_ids[i]]
+        if label == 10:
+            label = 0
         print_dict[label] += res
 
     return print_dict

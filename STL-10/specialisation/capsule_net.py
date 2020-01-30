@@ -11,14 +11,12 @@ class ConvLayer(nn.Module):
         super(ConvLayer, self).__init__()
         max_s = 2
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(in_channels, 32, kernel_size=9, stride=1),
             # nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
+            nn.ReLU()
+            # nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1),
             #
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=max_s, padding=1)
+
         )
 
     def forward(self, x):
@@ -27,7 +25,7 @@ class ConvLayer(nn.Module):
 
 class PrimaryCaps(nn.Module):
 
-    def __init__(self, num_capsules=8, in_channels=128, out_channels=32, kernel_size=9, num_routes=32 * 6 * 6):
+    def __init__(self, num_capsules=8, in_channels=32, out_channels=4, kernel_size=9, num_routes=4 * 17 * 17):
         super(PrimaryCaps, self).__init__()
 
         self.num_routes = num_routes
@@ -38,6 +36,7 @@ class PrimaryCaps(nn.Module):
     def forward(self, x):
         u = [capsule(x) for capsule in self.capsules]
         u = torch.stack(u, dim=1)
+
         u = u.view(x.size(0), self.num_routes, -1)
 
         return self.squash(u)
@@ -51,7 +50,7 @@ class PrimaryCaps(nn.Module):
 
 class DigitCaps(nn.Module):
 
-    def __init__(self, num_capsules=10, num_routes=32 * 6 * 6, in_channels=8, out_channels=16):
+    def __init__(self, num_capsules=10, num_routes=4 * 17 * 17, in_channels=4, out_channels=8):
         super(DigitCaps, self).__init__()
 
         self.in_channels = in_channels
@@ -62,19 +61,18 @@ class DigitCaps(nn.Module):
 
     def forward(self, x):
         batch_size = x.size(0)
-        print(x.shape)
-        print(torch.__version__)
+
         x = torch.stack([x] * self.num_capsules, dim=2).unsqueeze(4)
         W = torch.cat([self.W] * batch_size, dim=0)
 
-        print("W", W.shape)
-        print("x", x.shape)
-        # u_hat = W * x
-        # print(u_hat.shape)
-        u_hat = torch.mul(W, x)
-        input()
+        # print("x", x.shape)
+        # print("W", W.shape)
+        # input()
+        #W = W.transpose(4, 3)
 
-        b_ij = Variable(torch.zeros(1, self.num_routes, self.num_capsules, 1))
+        u_hat = torch.mul(W, x)
+
+        b_ij = Variable(torch.zeros(1, self.num_routes, self.num_capsules, 1, 1))
 
         if USE_CUDA:
             b_ij = b_ij.cuda()
@@ -82,13 +80,13 @@ class DigitCaps(nn.Module):
         num_iterations = 3
         for iteration in range(num_iterations):
             c_ij = F.softmax(b_ij, dim=1)
-            c_ij = torch.cat([c_ij] * batch_size, dim=0).unsqueeze(4)
+            c_ij = torch.cat([c_ij] * batch_size, dim=0)
 
             s_j = (c_ij * u_hat).sum(dim=1, keepdim=True)
             v_j = self.squash(s_j)
 
             if iteration < num_iterations - 1:
-                a_ij = torch.matmul(u_hat.transpose(3, 4), torch.cat([v_j] * self.num_routes, dim=1))
+                a_ij = u_hat * torch.cat([v_j] * self.num_routes, dim=1)
                 b_ij = b_ij + a_ij.squeeze(4).mean(dim=0, keepdim=True)
 
         return v_j.squeeze(1)
@@ -102,16 +100,17 @@ class DigitCaps(nn.Module):
 
 class Classifier(nn.Module):
 
-    def __init__(self, input_width=20):
+    def __init__(self, input_width=32):
         super(Classifier, self).__init__()
 
         self.classification_layers = nn.Sequential(
-            nn.Linear(input_width, 100),
-            nn.ReLU(inplace=True),
-            nn.Linear(100, 1),
-            # nn.ReLU(inplace=True),
-            # nn.Linear(1024, self.input_height * self.input_height * self.input_channel),
+            nn.Linear(input_width, 1),
             nn.Sigmoid()
+            # nn.ReLU(inplace=True),
+            # nn.Linear(500, 1),
+            # # nn.ReLU(inplace=True),
+            # # nn.Linear(1024, self.input_height * self.input_height * self.input_channel),
+            # nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -141,19 +140,32 @@ class CapsNet(nn.Module):
         self.classifier0 = Classifier()
 
     def forward(self, data):
-        output = self.digit_capsules(self.primary_capsules(self.conv_layer(data)))
-        print(output.shape)
+        conv = self.conv_layer(data)
+        primary = self.primary_capsules(conv)
+        output = self.digit_capsules(primary)
 
-        classification1 = self.classifier1(output)
-        classification2 = self.classifier2(output)
-        classification3 = self.classifier3(output)
-        classification4 = self.classifier4(output)
-        classification5 = self.classifier5(output)
-        classification6 = self.classifier6(output)
-        classification7 = self.classifier7(output)
-        classification8 = self.classifier8(output)
-        classification9 = self.classifier9(output)
-        classification0 = self.classifier0(output)
+        linear_in_0 = torch.flatten(output[:, 0, :, :], 1)
+        linear_in_1 = torch.flatten(output[:, 1, :, :], 1)
+        linear_in_2 = torch.flatten(output[:, 2, :, :], 1)
+        linear_in_3 = torch.flatten(output[:, 3, :, :], 1)
+        linear_in_4 = torch.flatten(output[:, 4, :, :], 1)
+        linear_in_5 = torch.flatten(output[:, 5, :, :], 1)
+        linear_in_6 = torch.flatten(output[:, 6, :, :], 1)
+        linear_in_7 = torch.flatten(output[:, 7, :, :], 1)
+        linear_in_8 = torch.flatten(output[:, 8, :, :], 1)
+        linear_in_9 = torch.flatten(output[:, 9, :, :], 1)
+
+
+        classification1 = self.classifier1(linear_in_0)
+        classification2 = self.classifier2(linear_in_1)
+        classification3 = self.classifier3(linear_in_2)
+        classification4 = self.classifier4(linear_in_3)
+        classification5 = self.classifier5(linear_in_4)
+        classification6 = self.classifier6(linear_in_5)
+        classification7 = self.classifier7(linear_in_6)
+        classification8 = self.classifier8(linear_in_7)
+        classification9 = self.classifier9(linear_in_8)
+        classification0 = self.classifier0(linear_in_9)
 
         return output, classification1, classification2, classification3, classification4, classification5, classification6, classification7, classification8, classification9, classification0
 
