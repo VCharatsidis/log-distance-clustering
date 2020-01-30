@@ -21,11 +21,12 @@ from four_variate_mi import four_variate_IID_loss
 from mutual_info import IID_loss
 from utils import rotate, scale, to_gray, random_erease, vertical_flip
 from colon_mvmi import Colon
+from capsule_net import CapsNet
 
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 MAX_STEPS_DEFAULT = 300000
-BATCH_SIZE_DEFAULT = 16
+BATCH_SIZE_DEFAULT = 128
 EVAL_FREQ_DEFAULT = 100
 NUMBER_CLASSES = 1
 FLAGS = None
@@ -43,18 +44,7 @@ def kl_divergence(p, q):
     return torch.nn.functional.kl_div(p, q)
 
 
-def encode_4_patches(image, colons,
-                     p1=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p2=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p3=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p4=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p5=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p6=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p7=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p8=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p9=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     p0=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                     ):
+def encode_4_patches(image, colons):
 
     #split_at_pixel = 19
 
@@ -106,26 +96,21 @@ def encode_4_patches(image, colons,
     image = image.to('cuda')
     image_2 = image_2.to('cuda')
 
-    p1 = p1.cuda()
-    p2 = p2.cuda()
-    p3 = p3.cuda()
-    p4 = p4.cuda()
-    p5 = p5.cuda()
-    p6 = p6.cuda()
-    p7 = p7.cuda()
-    p8 = p8.cuda()
-    p9 = p9.cuda()
-    p0 = p0.cuda()
+    output, c1, c2, c3, c4, c5, c6, c7, c8, c9, c0 = colons[0](image)
+    output, a_c1, a_c2, a_c3, a_c4, a_c5, a_c6, a_c7, a_c8, a_c9, a_c0 = colons[0](image_2)
 
-    new_preds = []
-    for idx, colon in enumerate(colons):
-        # colons[idx] = colons[idx].to('cuda')
+    comb1 = (c1 + a_c1) / 2
+    comb2 = (c2 + a_c2) / 2
+    comb3 = (c3 + a_c3) / 2
+    comb4 = (c4 + a_c4) / 2
+    comb5 = (c5 + a_c5) / 2
+    comb6 = (c6 + a_c6) / 2
+    comb7 = (c7 + a_c7) / 2
+    comb8 = (c8 + a_c8) / 2
+    comb9 = (c9 + a_c9) / 2
+    comb0 = (c0 + a_c0) / 2
 
-        pred_1 = colons[idx](image, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
-        pred_2 = colons[idx](image_2, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
-        pred = (pred_1 + pred_2)/2
-
-        new_preds.append(pred.to('cpu'))
+    new_preds =[comb1.to('cpu'), comb2.to('cpu'), comb3.to('cpu'), comb4.to('cpu'), comb5.to('cpu'), comb6.to('cpu'), comb7.to('cpu'), comb8.to('cpu'), comb9.to('cpu'), comb0.to('cpu')]
 
     products = []
     for prod in range(10):
@@ -162,18 +147,7 @@ def encode_4_patches(image, colons,
     return products
 
 
-def forward_block(X, ids, colons, optimizers, train, to_tensor_size,
-                  p1=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p2=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p3=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p4=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p5=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p6=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p7=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p8=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p9=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  p0=torch.zeros([BATCH_SIZE_DEFAULT, NUMBER_CLASSES]),
-                  ):
+def forward_block(X, ids, colons, optimizers, train, to_tensor_size):
 
     x_train = X[ids, :]
 
@@ -181,7 +155,7 @@ def forward_block(X, ids, colons, optimizers, train, to_tensor_size,
 
     images = x_tensor/255.0
 
-    products = encode_4_patches(images, colons, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
+    products = encode_4_patches(images, colons)
 
     losses = []
     total_loss = torch.zeros([1])
@@ -241,81 +215,14 @@ def train():
     predictor_model = os.path.join(script_directory, filepath)
     colons_paths.append(predictor_model)
 
-    input = 4106
-    #input = 1152
-
-
-    c = Specialist(3, input)
+    c = CapsNet()
     c = c.cuda()
     colons.append(c)
-
-    c2 = Specialist(3, input)
-    c2 = c2.cuda()
-    colons.append(c2)
-
-    c3 = Specialist(3, input)
-    c3.cuda()
-    colons.append(c3)
-
-    c4 = Specialist(3, input)
-    c4.cuda()
-    colons.append(c4)
-
-    c5 = Specialist(3, input)
-    c5.cuda()
-    colons.append(c5)
-
-    c6 = Specialist(3, input)
-    c6.cuda()
-    colons.append(c6)
-
-    c7 = Specialist(3, input)
-    c7.cuda()
-    colons.append(c7)
-
-    c8 = Specialist(3, input)
-    c8.cuda()
-    colons.append(c8)
-
-    c9 = Specialist(3, input)
-    c9.cuda()
-    colons.append(c9)
-
-    c0 = Specialist(3, input)
-    c0.cuda()
-    colons.append(c0)
 
     optimizer = torch.optim.Adam(c.parameters(), lr=LEARNING_RATE_DEFAULT)
     optimizers.append(optimizer)
 
-    optimizer2 = torch.optim.Adam(c2.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer2)
-
-    optimizer3 = torch.optim.Adam(c3.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer3)
-
-    optimizer4 = torch.optim.Adam(c4.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer4)
-
-    optimizer5 = torch.optim.Adam(c5.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer5)
-
-    optimizer6 = torch.optim.Adam(c6.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer6)
-
-    optimizer7 = torch.optim.Adam(c7.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer7)
-
-    optimizer8 = torch.optim.Adam(c8.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer8)
-
-    optimizer9 = torch.optim.Adam(c9.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer9)
-
-    optimizer0 = torch.optim.Adam(c0.parameters(), lr=LEARNING_RATE_DEFAULT)
-    optimizers.append(optimizer0)
-
-    max_loss = 1999
+    max_loss = 10000000
 
     for iteration in range(MAX_STEPS_DEFAULT):
 
@@ -323,18 +230,13 @@ def train():
 
         train = True
         products, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT)
-        p1, p2, p3, p4, p5, p6, p7, p8, p9, p0 = products
-        products, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
-        p1, p2, p3, p4, p5, p6, p7, p8, p9, p0 = products
-        products, mim = forward_block(X_train, ids, colons, optimizers, train, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
 
         if iteration % EVAL_FREQ_DEFAULT == 0:
             # print_dict = {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
-            print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: ""}
+            print_dict = {1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 0: ""}
 
             test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
-
 
             # test_ids = np.random.choice(len(X_test), size=BATCH_SIZE_DEFAULT, replace=False)
             # products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
@@ -344,13 +246,8 @@ def train():
             # products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
             # print_dict = gather_data(print_dict, products, targets, test_ids)
 
-            p1, p2, p3, p4, p5, p6, p7, p8, p9, p0 = products
             print("loss 1: ", mim.item())
-            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
-            p1, p2, p3, p4, p5, p6, p7, p8, p9, p0 = products
-            print("loss 2: ", mim.item())
-            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT, p1, p2, p3, p4, p5, p6, p7, p8, p9, p0)
-            print("loss 3: ", mim.item())
+            products, mim = forward_block(X_test, test_ids, colons, optimizers, False, BATCH_SIZE_DEFAULT)
 
             print()
             print("iteration: ", iteration)
