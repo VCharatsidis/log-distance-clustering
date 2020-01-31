@@ -50,7 +50,7 @@ class PrimaryCaps(nn.Module):
 
 class DigitCaps(nn.Module):
 
-    def __init__(self, num_capsules=10, num_routes=8 * 17 * 17, in_channels=8, out_channels=8):
+    def __init__(self, num_capsules=10, num_routes=8 * 17 * 17, in_channels=8, out_channels=16):
         super(DigitCaps, self).__init__()
 
         self.in_channels = in_channels
@@ -66,8 +66,10 @@ class DigitCaps(nn.Module):
         x = torch.stack([x] * self.num_capsules, dim=2).unsqueeze(4)
 
         W = torch.cat([self.W] * batch_size, dim=0)
-        W = W.transpose(4, 3)
+        #W = W.transpose(4, 3)
 
+        # print(W.shape)
+        # print(x.shape)
         u_hat = torch.matmul(W, x)
 
         b_ij = Variable(torch.zeros(1, self.num_routes, self.num_capsules, 1))
@@ -107,13 +109,11 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
 
         self.classification_layers = nn.Sequential(
-            nn.Linear(input_width, 1),
+            nn.Linear(16, 100),
+            nn.Tanh(),
+
+            nn.Linear(100, 1),
             nn.Sigmoid()
-            # nn.ReLU(inplace=True),
-            # nn.Linear(500, 1),
-            # # nn.ReLU(inplace=True),
-            # # nn.Linear(1024, self.input_height * self.input_height * self.input_channel),
-            # nn.Sigmoid()
         )
 
     def forward(self, x):
