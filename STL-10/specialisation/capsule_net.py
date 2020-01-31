@@ -25,9 +25,10 @@ class ConvLayer(nn.Module):
 
 class PrimaryCaps(nn.Module):
 
-    def __init__(self, num_capsules=8, in_channels=32, out_channels=4, kernel_size=9, num_routes=4 * 17 * 17):
+    def __init__(self, num_capsules=8, in_channels=32, out_channels=8, kernel_size=9, num_routes=8 * 17 * 17):
         super(PrimaryCaps, self).__init__()
 
+        self.num_capsules = num_capsules
         self.num_routes = num_routes
         self.capsules = nn.ModuleList([
             nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=2, padding=0)
@@ -36,13 +37,12 @@ class PrimaryCaps(nn.Module):
     def forward(self, x):
         u = [capsule(x) for capsule in self.capsules]
         u = torch.stack(u, dim=1)
-
-        u = u.view(x.size(0), self.num_routes, -1)
+        u = u.view(x.size(0), self.num_capsules, -1)
 
         return self.squash(u)
 
     def squash(self, input_tensor):
-        squared_norm = (input_tensor ** 2).sum(-1, keepdim=True)
+        squared_norm = (input_tensor ** 2).sum(dim=2, keepdim=True)
         output_tensor = squared_norm * input_tensor / ((1. + squared_norm) * torch.sqrt(squared_norm))
 
         return output_tensor
@@ -50,7 +50,7 @@ class PrimaryCaps(nn.Module):
 
 class DigitCaps(nn.Module):
 
-    def __init__(self, num_capsules=10, num_routes=4 * 17 * 17, in_channels=4, out_channels=8):
+    def __init__(self, num_capsules=10, num_routes=8 * 17 * 17, in_channels=8, out_channels=8):
         super(DigitCaps, self).__init__()
 
         self.in_channels = in_channels
@@ -62,37 +62,40 @@ class DigitCaps(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
 
+        x = x.transpose(1, 2)
         x = torch.stack([x] * self.num_capsules, dim=2).unsqueeze(4)
+
         W = torch.cat([self.W] * batch_size, dim=0)
+        W = W.transpose(4, 3)
 
-        # print("x", x.shape)
-        # print("W", W.shape)
-        # input()
-        #W = W.transpose(4, 3)
+        u_hat = torch.matmul(W, x)
 
-        u_hat = torch.mul(W, x)
-
-        b_ij = Variable(torch.zeros(1, self.num_routes, self.num_capsules, 1, 1))
+        b_ij = Variable(torch.zeros(1, self.num_routes, self.num_capsules, 1))
 
         if USE_CUDA:
             b_ij = b_ij.cuda()
 
         num_iterations = 3
         for iteration in range(num_iterations):
-            c_ij = F.softmax(b_ij, dim=1)
-            c_ij = torch.cat([c_ij] * batch_size, dim=0)
+            c_ij = F.softmax(b_ij, dim=2)
+            c_ij = torch.cat([c_ij] * batch_size, dim=0).unsqueeze(4)
 
             s_j = (c_ij * u_hat).sum(dim=1, keepdim=True)
-            v_j = self.squash(s_j)
+
+            v_j = self.squash(s_j, dim=3)
+            v_j1 = torch.cat([v_j] * self.num_routes, dim=1)
+
+            u_vj1 = torch.matmul(u_hat.transpose(3, 4), v_j1).squeeze(4).mean(dim=0, keepdim=True)
 
             if iteration < num_iterations - 1:
-                a_ij = u_hat * torch.cat([v_j] * self.num_routes, dim=1)
-                b_ij = b_ij + a_ij.squeeze(4).mean(dim=0, keepdim=True)
+                b_ij = b_ij + u_vj1
 
-        return v_j.squeeze(1)
+        squeezed = v_j.squeeze(1)
 
-    def squash(self, input_tensor):
-        squared_norm = (input_tensor ** 2).sum(-1, keepdim=True)
+        return squeezed
+
+    def squash(self, input_tensor, dim=2):
+        squared_norm = (input_tensor ** 2).sum(dim, keepdim=True)
         output_tensor = squared_norm * input_tensor / ((1. + squared_norm) * torch.sqrt(squared_norm))
 
         return output_tensor
@@ -100,7 +103,7 @@ class DigitCaps(nn.Module):
 
 class Classifier(nn.Module):
 
-    def __init__(self, input_width=32):
+    def __init__(self, input_width=8):
         super(Classifier, self).__init__()
 
         self.classification_layers = nn.Sequential(
